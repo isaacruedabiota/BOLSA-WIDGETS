@@ -24,6 +24,30 @@
             </intent-filter>
         </activity>
 
+        <receiver
+            android:name=".widget.WatchlistWidgetReceiver"
+            android:exported="false"
+            android:label="@string/widget_watchlist_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/watchlist_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.PortfolioWidgetReceiver"
+            android:exported="false"
+            android:label="@string/widget_portfolio_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/portfolio_widget_info" />
+        </receiver>
+
         <!--
             WorkManager is initialised on demand from BolsaWidgetsApp so that Hilt can
             supply the worker factory. Only its initializer is removed; any other

@@ -7,7 +7,7 @@ Estado a 23 de agosto de 2026.
 | 1 | Proyecto base, Gradle, Hilt, Room, modelo de datos, `QuoteProvider` con Yahoo + tests | ✅ Completada |
 | 2 | App Compose: cartera, watchlist, ajustes, contra datos reales | ✅ Completada |
 | 3 | WorkManager + `MarketClock` + caché y política de fallback | ✅ Completada |
-| 4 | Widgets 1 y 2 (watchlist y resumen de cartera), solo texto/layout | ⬜ Pendiente |
+| 4 | Widgets 1 y 2 (watchlist y resumen de cartera), solo texto/layout | ✅ Completada |
 | 5 | Widgets 3 y 4 (sparkline y mapa de calor), renderizado a bitmap | ⬜ Pendiente |
 | 6 | Detalle de valor con gráfico, CSV import/export, pulido | ⬜ Pendiente |
 
@@ -128,13 +128,50 @@ fetch fallido no borra nada. El tope de 1 refresco de FX por hora también.
 
 ---
 
-## Fase 4 — Widgets de texto ⬜
+## Fase 4 — Widgets de texto ✅
 
-- **Watchlist** (4x2, 4x4): `LazyColumn` de Glance, precio, variación %, color y flecha.
-  Tap en fila abre el detalle del valor.
-- **Resumen de cartera** (2x2, 4x2): valor total EUR, P&L día y total (€ y %), hora del
-  último refresco, modo privacidad.
-- Botón de refresco manual en cada widget.
+**Entregado**
+
+- **Seguimiento** (4x2 y 4x4): `LazyColumn` de Glance con símbolo, precio, variación del
+  día con flecha y color. A 4x4 añade el nombre del valor bajo el ticker. Tap en fila abre
+  la app con un deep link `bolsawidgets://symbol/{ticker}`.
+- **Cartera** (2x2 y 4x2): valor total en EUR, P&L del día y total, hora del último dato.
+  A 2x2 deja solo los porcentajes en vez de truncar los importes. Respeta el modo
+  privacidad ocultando los euros.
+- Botón de refresco en la cabecera de ambos, con `ActionCallback`. Ignora el horario de
+  mercado, igual que el botón de dentro de la app.
+- `WidgetEntryPoint` (Hilt `@EntryPoint`) porque Glance instancia los widgets el framework,
+  no Hilt. `WidgetUpdater` los redibuja.
+- Se redibujan desde el worker tras un fetch con cambios, y desde un observador en
+  `BolsaWidgetsApp` que vigila Room y las preferencias, para que cualquier edición en la
+  app se refleje sin esperar al siguiente tick.
+
+**Decisiones tomadas**
+
+- Los datos se leen como snapshot al abrir la sesión de Glance en vez de recolectar flujos
+  dentro de la composición: más predecible, y el redibujado es explícito.
+- El símbolo del deep link viaja en la URI y no en un extra, porque los `PendingIntent` se
+  deduplican con `Intent.filterEquals`, que ignora los extras. Con extras, todas las filas
+  habrían abierto el mismo valor.
+- Las flechas ▲▼ son texto, no iconos: heredan color y tamaño del dato y no ocupan nada en
+  el bundle de `RemoteViews`.
+- El modo privacidad tapa los importes de **cartera**, no los precios de mercado del widget
+  de seguimiento: esos son públicos y no dicen cuánto tienes.
+
+**Validado en emulador**: los dos widgets añadidos a la pantalla de inicio desde el selector
+del launcher, mostrando datos reales (SAN.MC 12,55 € ▲+2,65 %, ITX.MC 58,22 € ▲+1,11 %;
+cartera 1.255,00 € con Día ▲+2,65 % y Total ▲+25,50 %). Botón de refresco disparando
+peticiones reales, tap en fila abriendo la app, y el widget de cartera actualizándose solo
+al guardar una posición.
+
+**Corregido durante la validación**
+
+- El observador solo vigilaba Room, así que activar el modo privacidad no redibujaba los
+  widgets: seguían enseñando los euros hasta el siguiente precio. Ahora también observa las
+  preferencias.
+
+**Pendiente por diseño**: el tap en una fila aterriza en Seguimiento porque la pantalla de
+detalle es de la fase 6. El deep link ya lleva el símbolo y solo hay que enrutarlo.
 
 ---
 

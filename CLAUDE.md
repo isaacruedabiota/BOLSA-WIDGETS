@@ -151,7 +151,20 @@ Yahoo Finance son endpoints públicos no documentados. Se asume que fallan.
 - El bitmap se dimensiona con `LocalSize.current`, nunca a tamaño fijo.
 - Vigilar el límite de ~1,5 MB del bundle de `RemoteViews`: comprimir y dimensionar en
   consecuencia. Ante la duda, reducir resolución antes que arriesgar un `TransactionTooLargeException`.
-- Cada widget lleva su propio botón de refresco manual.
+- Cada widget lleva su propio botón de refresco manual, que **ignora el horario de mercado**
+  igual que el de la app.
+- Glance instancia los `GlanceAppWidget` el framework, no Hilt: las dependencias se obtienen
+  con `WidgetEntryPoint` (`@EntryPoint` sobre `SingletonComponent`).
+- Los widgets leen un **snapshot** de Room al abrir su sesión. Quien los redibuja es
+  `WidgetUpdater`, llamado por el worker tras un fetch con cambios y por el observador de
+  `BolsaWidgetsApp`, que vigila Room **y las preferencias** (el modo privacidad cambia lo
+  que el widget puede imprimir).
+- Los deep links de widget llevan el símbolo en la URI, nunca en un extra: los
+  `PendingIntent` se deduplican con `Intent.filterEquals`, que ignora los extras, así que
+  con extras todas las filas abrirían el mismo valor.
+- `ui/common/Format.kt` y `ui/theme/Color.kt` son primitivas de presentación compartidas
+  entre `ui` y `widget` a propósito: el formateo y la escala verde/rojo tienen que ser
+  idénticos en la app y en la pantalla de inicio.
 
 ---
 

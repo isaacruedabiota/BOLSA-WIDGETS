@@ -12,6 +12,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -45,7 +46,20 @@ private enum class TopLevelTab(
 }
 
 @Composable
-fun BolsaApp(navController: NavHostController = rememberNavController()) {
+fun BolsaApp(
+    deepLinkSymbol: String? = null,
+    onDeepLinkHandled: () -> Unit = {},
+    navController: NavHostController = rememberNavController(),
+) {
+    LaunchedEffect(deepLinkSymbol) {
+        if (deepLinkSymbol != null) {
+            // TODO(phase 6): route to the value detail screen once it exists. Until then
+            // a widget row lands on Seguimiento, where the symbol is listed.
+            navController.navigateToTab(WatchlistRoute)
+            onDeepLinkHandled()
+        }
+    }
+
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
     val showBottomBar = TopLevelTab.entries.any { currentDestination.isOn(it.routeClass) }

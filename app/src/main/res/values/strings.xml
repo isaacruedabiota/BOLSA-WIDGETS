@@ -105,6 +105,20 @@
     <string name="refresh_failed">Sin conexión con el proveedor. Se mantienen los últimos datos guardados.</string>
     <string name="refresh_nothing">Nada que actualizar</string>
 
+    <!-- Widgets -->
+    <string name="widget_watchlist_label">Seguimiento</string>
+    <string name="widget_watchlist_description">Tus valores seguidos con la variación del día.</string>
+    <string name="widget_portfolio_label">Cartera</string>
+    <string name="widget_portfolio_description">Valor total y P&amp;L de tu cartera en euros.</string>
+    <string name="widget_empty_watchlist">Añade valores desde la app</string>
+    <string name="widget_empty_portfolio">Añade posiciones desde la app</string>
+    <string name="widget_no_price">Sin precio</string>
+    <string name="widget_refresh">Actualizar</string>
+    <string name="widget_updated">Act. %1$s</string>
+    <string name="widget_never">Sin datos todavía</string>
+    <string name="widget_day">Día</string>
+    <string name="widget_total">Total</string>
+
     <!-- Valores ocultos en modo privacidad -->
     <string name="value_hidden">••••</string>
 </resources>

@@ -8,6 +8,7 @@ import androidx.work.WorkerParameters
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import dev.isaacru.bolsawidgets.domain.usecase.RefreshMarketDataUseCase
+import dev.isaacru.bolsawidgets.widget.WidgetUpdater
 import java.time.Duration
 
 /**
@@ -23,6 +24,7 @@ class RefreshQuotesWorker @AssistedInject constructor(
     @Assisted appContext: Context,
     @Assisted params: WorkerParameters,
     private val refreshMarketData: RefreshMarketDataUseCase,
+    private val widgetUpdater: WidgetUpdater,
 ) : CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): Result {
@@ -44,7 +46,12 @@ class RefreshQuotesWorker @AssistedInject constructor(
                 "Refreshed " + outcome.updated.size + "/" + outcome.requested.size + " symbols",
             )
         }
-        // TODO(phase 4): ask the Glance widgets to redraw once they exist.
+        // Only when something actually changed: a redraw with identical data is a
+        // pointless RemoteViews round trip.
+        if (outcome.updated.isNotEmpty()) {
+            runCatching { widgetUpdater.updateAll() }
+                .onFailure { Log.w(TAG, "Could not redraw the widgets", it) }
+        }
         return Result.success()
     }
 
