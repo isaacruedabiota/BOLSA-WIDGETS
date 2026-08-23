@@ -6,7 +6,7 @@ Estado a 23 de agosto de 2026.
 | --- | --- | --- |
 | 1 | Proyecto base, Gradle, Hilt, Room, modelo de datos, `QuoteProvider` con Yahoo + tests | ✅ Completada |
 | 2 | App Compose: cartera, watchlist, ajustes, contra datos reales | ✅ Completada |
-| 3 | WorkManager + `MarketClock` + caché y política de fallback | ⬜ Pendiente |
+| 3 | WorkManager + `MarketClock` + caché y política de fallback | ✅ Completada |
 | 4 | Widgets 1 y 2 (watchlist y resumen de cartera), solo texto/layout | ⬜ Pendiente |
 | 5 | Widgets 3 y 4 (sparkline y mapa de calor), renderizado a bitmap | ⬜ Pendiente |
 | 6 | Detalle de valor con gráfico, CSV import/export, pulido | ⬜ Pendiente |
@@ -94,16 +94,36 @@ ocultando importes. Sin crashes.
 
 ---
 
-## Fase 3 — Refresco ⬜
+## Fase 3 — Refresco ✅
 
-- `MarketClock` testeable (BME 9:00–17:35, NYSE/NASDAQ 15:30–22:00 hora de Madrid, L-V).
-- `PeriodicWorkRequest` con el intervalo elegido en Ajustes y `NetworkType.CONNECTED`,
-  vía `hilt-work`. Reprogramar el worker cuando cambie el intervalo.
-- Envolver `RefreshMarketDataUseCase` con la comprobación de horario: si todos los símbolos
-  siguen mercados cerrados, no se toca la red.
-- Tests de `MarketClock`.
+**Entregado**
 
-El fallback a caché ya está en su sitio desde la fase 2: las lecturas salen de Room y un
+- `Market`: tabla de plazas con su sesión declarada **en la zona horaria de cada una**
+  (BME, Euronext, Xetra, Borsa Italiana, SIX, Londres y NYSE/NASDAQ), más el mapeo desde
+  el sufijo del ticker de Yahoo.
+- `MarketClock`: `isOpen`, `shouldFetch` y `marketsOf`, con `Clock` inyectado.
+- `RefreshMarketDataUseCase` acepta `respectMarketHours`: el worker lo pasa a `true` y
+  vuelve sin abrir un socket cuando todo está cerrado; el botón manual lo pasa a `false`.
+- `RefreshQuotesWorker` (`@HiltWorker`) y `RefreshScheduler`, con trabajo único
+  `bolsa-periodic-refresh`, `NetworkType.CONNECTED` y el intervalo de Ajustes.
+  Se reencola al arrancar la app y al cambiar el intervalo.
+- WorkManager inicializado on-demand desde `BolsaWidgetsApp` (`Configuration.Provider`),
+  con `WorkManagerInitializer` quitado del manifest para que Hilt construya los workers.
+- 18 tests nuevos: `MarketClockTest` y `RefreshMarketDataUseCaseTest`.
+
+**Decisiones tomadas**
+
+- La spec solo fija BME y NYSE/NASDAQ. Como sigues ETF europeos, añadí las plazas europeas
+  que hacen falta para que el criterio "fuera de horario no se consume red" se cumpla de
+  verdad. Un sufijo que la tabla no conoce se trata como **siempre abierto**: sobra-refrescar
+  cuesta batería, no refrescar muestra datos falsos.
+- Las ventanas van en hora local de cada plaza en vez de en hora de Madrid, porque Europa y
+  EE. UU. no cambian de horario de verano el mismo día. `MarketClockTest` cubre esa semana.
+- 20 minutos de gracia tras el cierre, para que una ejecución capture el cierre oficial.
+- El worker nunca devuelve `Result.retry()`. El repositorio ya reintenta lo transitorio y el
+  siguiente periodo está a minutos.
+
+El fallback a caché ya estaba en su sitio desde la fase 2: las lecturas salen de Room y un
 fetch fallido no borra nada. El tope de 1 refresco de FX por hora también.
 
 ---

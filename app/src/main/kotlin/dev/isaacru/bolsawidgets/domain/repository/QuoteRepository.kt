@@ -56,6 +56,8 @@ data class RefreshOutcome(
     val updated: List<String>,
     val failed: List<String>,
     val finishedAt: Instant,
+    /** True when the run deliberately spent no network because every market was shut. */
+    val skippedMarketsClosed: Boolean = false,
 ) {
     val didNothing: Boolean get() = updated.isEmpty()
 
@@ -63,5 +65,8 @@ data class RefreshOutcome(
 
     companion object {
         fun nothingToDo(at: Instant) = RefreshOutcome(emptyList(), emptyList(), emptyList(), at)
+
+        fun marketsClosed(at: Instant) =
+            RefreshOutcome(emptyList(), emptyList(), emptyList(), at, skippedMarketsClosed = true)
     }
 }

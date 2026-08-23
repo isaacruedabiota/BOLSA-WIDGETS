@@ -1,6 +1,7 @@
 package dev.isaacru.bolsawidgets.domain.usecase
 
 import dev.isaacru.bolsawidgets.domain.calc.CurrencyConverter
+import dev.isaacru.bolsawidgets.domain.market.MarketClock
 import dev.isaacru.bolsawidgets.domain.repository.PortfolioRepository
 import dev.isaacru.bolsawidgets.domain.repository.QuoteRepository
 import dev.isaacru.bolsawidgets.domain.repository.RefreshOutcome
@@ -14,13 +15,13 @@ import javax.inject.Inject
  * Refreshes every symbol the app cares about: held positions plus watchlist.
  *
  * FX follows the quotes because the set of currencies to convert is only known once the
- * quotes are in. Market-hours awareness lands in phase 3 and wraps this use case rather
- * than changing it.
+ * quotes are in.
  */
 class RefreshMarketDataUseCase @Inject constructor(
     private val portfolioRepository: PortfolioRepository,
     private val watchlistRepository: WatchlistRepository,
     private val quoteRepository: QuoteRepository,
+    private val marketClock: MarketClock,
     private val clock: Clock,
 ) {
 
@@ -28,8 +29,16 @@ class RefreshMarketDataUseCase @Inject constructor(
      * [staleAfter] skips symbols whose cached quote is younger than that age, which is
      * how opening the app avoids re-fetching data it already has. Pass [Duration.ZERO]
      * for an explicit manual refresh, which always hits the network.
+     *
+     * [respectMarketHours] makes the run bail out without a single request when every
+     * symbol follows a market that is shut. The background worker passes true; a refresh
+     * the user asked for explicitly passes false, because a deliberate tap should never
+     * be silently ignored.
      */
-    suspend operator fun invoke(staleAfter: Duration = Duration.ZERO): RefreshOutcome {
+    suspend operator fun invoke(
+        staleAfter: Duration = Duration.ZERO,
+        respectMarketHours: Boolean = false,
+    ): RefreshOutcome {
         val now = Instant.now(clock)
         val positions = portfolioRepository.getPositions()
         val watchlist = watchlistRepository.getItems()
@@ -38,6 +47,11 @@ class RefreshMarketDataUseCase @Inject constructor(
             .distinct()
 
         if (allSymbols.isEmpty()) return RefreshOutcome.nothingToDo(now)
+
+        // Checked before anything else so a closed-markets run costs no disk reads either.
+        if (respectMarketHours && !marketClock.shouldFetch(allSymbols, now)) {
+            return RefreshOutcome.marketsClosed(now)
+        }
 
         val cached = quoteRepository.getCachedQuotes(allSymbols)
         val symbols = if (staleAfter.isZero || staleAfter.isNegative) {

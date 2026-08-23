@@ -157,12 +157,27 @@ Yahoo Finance son endpoints públicos no documentados. Se asume que fallan.
 
 ## 7. Refresco
 
-- `PeriodicWorkRequest` cada 15 min con `NetworkType.CONNECTED`.
+- `PeriodicWorkRequest` con el intervalo de Ajustes (mínimo 15 min) y `NetworkType.CONNECTED`,
+  encolado como trabajo único (`RefreshScheduler`) al arrancar la app y al cambiar el
+  intervalo. WorkManager se inicializa **on demand** desde `BolsaWidgetsApp` para que Hilt
+  pueda construir los workers; por eso el manifest quita `WorkManagerInitializer`.
 - **Consciente de horario de mercado** (`MarketClock`, testeable): si todos los símbolos
-  siguen mercados cerrados, se salta el fetch y se reutiliza la caché.
-  - BME: 9:00–17:35, L-V
-  - NYSE/NASDAQ: 15:30–22:00 hora de Madrid, L-V
-  - Festivos ignorados en v1.
+  siguen mercados cerrados, el worker vuelve sin abrir un socket.
+  - Las ventanas se declaran en la **zona horaria de cada plaza**, no en hora de Madrid.
+    Europa y EE. UU. no cambian de horario de verano el mismo día, así que un par de
+    semanas al año Nueva York abre a las 14:30 de Madrid en vez de a las 15:30. Declarando
+    9:30–16:00 `America/New_York` eso sale gratis.
+  - BME 9:00–17:35, Euronext 9:00–17:40, Xetra / Borsa Italiana / SIX 9:00–17:30,
+    Londres 8:00–16:30 local. Todas L-V. Festivos ignorados en v1.
+  - Un ticker que la tabla no reconoce (índices `^…`, pares `…=X`, guiones) se trata como
+    **siempre abierto**: sobra-refrescar cuesta batería, no refrescar muestra datos falsos.
+  - La ventana se alarga `CLOSING_GRACE` (20 min) tras el cierre para que una ejecución
+    capture el precio de cierre oficial.
+- El refresco **manual** (botón de la app) ignora el horario: un toque deliberado nunca se
+  ignora en silencio.
+- El worker nunca devuelve `Result.retry()`: el repositorio ya reintenta los fallos
+  transitorios con backoff y el siguiente periodo está a minutos. Despertar la radio con el
+  backoff de WorkManager sería gastar batería para nada.
 - FX se refresca como mucho **1 vez por hora**.
 
 ---
