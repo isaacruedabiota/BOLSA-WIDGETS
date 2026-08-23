@@ -1,0 +1,95 @@
+{
+  "chart": {
+    "result": [
+      {
+        "meta": {
+          "symbol": "SAN.MC",
+          "currency": "EUR",
+          "exchangeName": "MCE",
+          "fullExchangeName": "MCE",
+          "instrumentType": "EQUITY",
+          "shortName": "BANCO SANTANDER S.A.",
+          "longName": "Banco Santander, S.A.",
+          "regularMarketPrice": 12.55,
+          "previousClose": 12.226,
+          "chartPreviousClose": 12.226,
+          "regularMarketTime": 1787326579,
+          "exchangeTimezoneName": "Europe/Madrid",
+          "gmtoffset": 7200,
+          "priceHint": 2,
+          "scale": 3,
+          "validRanges": [
+            "1d",
+            "5d",
+            "1mo",
+            "3mo",
+            "6mo",
+            "1y",
+            "2y",
+            "5y",
+            "10y",
+            "ytd",
+            "max"
+          ],
+          "range": "1d",
+          "dataGranularity": "5m"
+        },
+        "timestamp": [
+          1787295600,
+          1787295900,
+          1787296200,
+          1787296500,
+          1787296800,
+          1787297100
+        ],
+        "indicators": {
+          "quote": [
+            {
+              "close": [
+                12.37600040435791,
+                12.383999824523926,
+                12.407999992370605,
+                null,
+                12.381999969482422,
+                12.404000282287598
+              ],
+              "open": [
+                12.303999900817871,
+                12.380000114440918,
+                12.383999824523926,
+                null,
+                12.380000114440918,
+                12.383999824523926
+              ],
+              "low": [
+                12.300000190734863,
+                12.371999740600586,
+                12.383999824523926,
+                null,
+                12.371999740600586,
+                12.381999969482422
+              ],
+              "high": [
+                12.387999534606934,
+                12.395999908447266,
+                12.40999984741211,
+                null,
+                12.392000198364258,
+                12.411999702453613
+              ],
+              "volume": [
+                0,
+                104895,
+                84740,
+                null,
+                48048,
+                143298
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "error": null
+  }
+}
