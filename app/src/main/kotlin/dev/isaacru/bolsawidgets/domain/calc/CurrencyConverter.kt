@@ -55,22 +55,32 @@ class CurrencyConverter(private val rates: Map<String, Double>) {
         return null
     }
 
-    private data class Normalized(val code: String, val minorUnitFactor: Double)
+    private fun normalize(currency: String): Normalized = normalizeCurrency(currency)
 
-    private fun normalize(currency: String): Normalized {
-        val raw = currency.trim()
-        // Yahoo reports pence as "GBp" (lowercase p) and cents as "ZAc" / "ILA".
-        return when (raw) {
-            "GBp", "GBX" -> Normalized("GBP", 0.01)
-            "ZAc" -> Normalized("ZAR", 0.01)
-            "ILA" -> Normalized("ILS", 0.01)
-            else -> Normalized(raw.uppercase(), 1.0)
-        }
+    /** A currency code reduced to its ISO major unit plus the factor to get there. */
+    data class Normalized(val code: String, val minorUnitFactor: Double) {
+        val isMinorUnit: Boolean get() = minorUnitFactor != 1.0
     }
 
     companion object {
         const val EUR = "EUR"
 
         val Empty = CurrencyConverter(emptyMap<String, Double>())
+
+        /**
+         * Yahoo quotes some listings in minor units: pence for London ("GBp", note the
+         * lowercase p, which is a different code from "GBP"), cents elsewhere. Anything
+         * that formats or converts an amount has to go through here, otherwise the value
+         * is wrong by a factor of 100.
+         */
+        fun normalizeCurrency(currency: String): Normalized = when (val raw = currency.trim()) {
+            "GBp", "GBX" -> Normalized("GBP", 0.01)
+            "ZAc" -> Normalized("ZAR", 0.01)
+            "ILA" -> Normalized("ILS", 0.01)
+            else -> Normalized(raw.uppercase(), 1.0)
+        }
+
+        /** True when [currency] is a minor-unit code that must not be shown as its ISO parent. */
+        fun isMinorUnit(currency: String): Boolean = normalizeCurrency(currency).isMinorUnit
     }
 }

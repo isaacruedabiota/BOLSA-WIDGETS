@@ -23,7 +23,7 @@ object ProviderModule {
     fun provideQuoteProviders(
         yahoo: YahooQuoteProvider,
         twelveData: TwelveDataQuoteProvider,
-    ): Map<ProviderId, QuoteProvider> = mapOf(
+    ): Map<ProviderId, @JvmSuppressWildcards QuoteProvider> = mapOf(
         ProviderId.YAHOO to yahoo,
         ProviderId.TWELVE_DATA to twelveData,
     )

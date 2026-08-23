@@ -1,4 +1,110 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Bolsa Widgets</string>
+
+    <!-- Navegación -->
+    <string name="nav_portfolio">Cartera</string>
+    <string name="nav_watchlist">Seguimiento</string>
+    <string name="nav_settings">Ajustes</string>
+
+    <!-- Acciones comunes -->
+    <string name="action_refresh">Actualizar</string>
+    <string name="action_add">Añadir</string>
+    <string name="action_save">Guardar</string>
+    <string name="action_cancel">Cancelar</string>
+    <string name="action_delete">Eliminar</string>
+    <string name="action_edit">Editar</string>
+    <string name="action_back">Volver</string>
+    <string name="action_close">Cerrar</string>
+    <string name="action_move_up">Subir</string>
+    <string name="action_move_down">Bajar</string>
+    <string name="action_remove">Quitar</string>
+    <string name="action_more">Más opciones</string>
+    <string name="action_retry">Reintentar</string>
+
+    <!-- Cartera -->
+    <string name="portfolio_title">Cartera</string>
+    <string name="portfolio_total_value">Valor total</string>
+    <string name="portfolio_day_pnl">P&amp;L del día</string>
+    <string name="portfolio_total_pnl">P&amp;L total</string>
+    <string name="portfolio_cost_basis">Invertido</string>
+    <string name="portfolio_last_update">Actualizado: %1$s</string>
+    <string name="portfolio_never_updated">Sin actualizar todavía</string>
+    <string name="portfolio_empty_title">Aún no tienes posiciones</string>
+    <string name="portfolio_empty_body">Añade tu primera compra para ver el valor y el P&amp;L de tu cartera en euros.</string>
+    <string name="portfolio_add_position">Añadir posición</string>
+    <string name="portfolio_unpriced_warning">Sin cotización para %1$s. Se cuenta a precio de coste y no suma P&amp;L.</string>
+    <string name="portfolio_lots_count">%1$d compras</string>
+    <string name="portfolio_one_lot">1 compra</string>
+    <string name="portfolio_average_price">Precio medio %1$s</string>
+    <string name="portfolio_quantity">%1$s títulos</string>
+    <string name="portfolio_weight">%1$s de la cartera</string>
+
+    <!-- Editor de posición -->
+    <string name="editor_title_new">Nueva posición</string>
+    <string name="editor_title_edit">Editar posición</string>
+    <string name="editor_symbol">Símbolo</string>
+    <string name="editor_symbol_helper">Busca el valor o escribe el ticker exacto (p. ej. SAN.MC)</string>
+    <string name="editor_search_symbol">Buscar símbolo</string>
+    <string name="editor_name">Nombre</string>
+    <string name="editor_exchange">Mercado</string>
+    <string name="editor_quantity">Cantidad</string>
+    <string name="editor_buy_price">Precio medio de compra</string>
+    <string name="editor_currency">Divisa</string>
+    <string name="editor_currency_auto">Del símbolo</string>
+    <string name="editor_purchase_date">Fecha de compra</string>
+    <string name="editor_notes">Notas</string>
+    <string name="editor_error_symbol">Indica un símbolo</string>
+    <string name="editor_error_symbol_unknown">No se ha podido cotizar este símbolo</string>
+    <string name="editor_error_quantity">La cantidad debe ser un número mayor que cero</string>
+    <string name="editor_error_price">El precio debe ser un número mayor o igual que cero</string>
+    <string name="editor_delete_title">¿Eliminar esta posición?</string>
+    <string name="editor_delete_body">Se borra solo esta compra. Las demás del mismo valor se mantienen.</string>
+    <string name="editor_verifying">Comprobando el símbolo…</string>
+    <string name="editor_verified">Cotiza a %1$s</string>
+
+    <!-- Seguimiento -->
+    <string name="watchlist_title">Seguimiento</string>
+    <string name="watchlist_empty_title">Tu lista está vacía</string>
+    <string name="watchlist_empty_body">Añade los valores que quieras vigilar sin tenerlos en cartera.</string>
+    <string name="watchlist_add">Añadir valor</string>
+    <string name="watchlist_no_price">Sin precio todavía</string>
+    <string name="watchlist_removed">%1$s quitado del seguimiento</string>
+    <string name="watchlist_already_present">%1$s ya está en la lista</string>
+
+    <!-- Buscador de símbolos -->
+    <string name="search_title">Buscar valor</string>
+    <string name="search_field_label">Ticker o nombre</string>
+    <string name="search_verified_header">Verificado</string>
+    <string name="search_suggestions_header">Sugerencias</string>
+    <string name="search_suggestions_unavailable">El buscador de Yahoo no responde. Escribe el ticker exacto y se validará igualmente.</string>
+    <string name="search_no_results">Ningún resultado. Prueba con el ticker exacto, incluido el sufijo de mercado (.MC, .AS…).</string>
+    <string name="search_hint">Escribe al menos un carácter.</string>
+    <string name="search_resolving">Validando %1$s…</string>
+    <string name="search_resolve_failed">%1$s no se ha podido cotizar</string>
+
+    <!-- Ajustes -->
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_provider_header">Proveedor de datos</string>
+    <string name="settings_provider_yahoo_note">Sin clave de API. Cubre BME (.MC), EE. UU. y ETF europeos.</string>
+    <string name="settings_provider_twelvedata_note">Todavía no implementado: si lo eliges se seguirá usando Yahoo.</string>
+    <string name="settings_privacy_header">Privacidad</string>
+    <string name="settings_privacy_title">Modo privacidad</string>
+    <string name="settings_privacy_body">Oculta los importes en euros en la app y en los widgets. Solo se ven porcentajes.</string>
+    <string name="settings_refresh_header">Refresco</string>
+    <string name="settings_refresh_body">Intervalo del refresco automático en segundo plano. El mínimo real del sistema es de 15 minutos.</string>
+    <string name="settings_refresh_minutes">%1$d minutos</string>
+    <string name="settings_refresh_hours">%1$d h</string>
+    <string name="settings_about_header">Acerca de</string>
+    <string name="settings_about_body">Bolsa Widgets %1$s. Uso personal, sin cuentas ni sincronización.</string>
+
+    <!-- Refresco / mensajes -->
+    <string name="refresh_in_progress">Actualizando…</string>
+    <string name="refresh_done">Datos actualizados</string>
+    <string name="refresh_partial">Actualizado con %1$d valores sin respuesta</string>
+    <string name="refresh_failed">Sin conexión con el proveedor. Se mantienen los últimos datos guardados.</string>
+    <string name="refresh_nothing">Nada que actualizar</string>
+
+    <!-- Valores ocultos en modo privacidad -->
+    <string name="value_hidden">••••</string>
 </resources>

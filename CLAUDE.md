@@ -40,7 +40,7 @@ No se añade **ninguna** dependencia fuera de esta lista sin preguntar antes.
 | Componente | Versión | Nota |
 | --- | --- | --- |
 | AGP | 9.3.1 | Lleva **Kotlin integrado**: no se aplica `org.jetbrains.kotlin.android` |
-| Gradle | 9.3.1 | Mínimo exigido por AGP 9.1+ |
+| Gradle | 9.5.0 | Mínimo exigido por AGP 9.3.1 |
 | Kotlin | 2.3.21 | Emparejado con KSP 2.3.11 (no hay KSP para 2.4.x todavía) |
 | KSP | 2.3.11 | Room y Hilt procesan con KSP; **kapt está prohibido** (incompatible con el Kotlin integrado de AGP 9) |
 | JDK | 21 (JBR de Android Studio) | `sourceCompatibility` / `targetCompatibility` = 17 |
@@ -82,6 +82,12 @@ dev.isaacru.bolsawidgets
 
 - Repositorios: interfaz en `domain/repository`, implementación `…RepositoryImpl` en
   `data/repository`, enlazadas con `@Binds` en `di/RepositoryModule`.
+- `hiltViewModel()` se importa de `androidx.hilt.lifecycle.viewmodel.compose`; el de
+  `androidx.hilt.navigation.compose` está deprecado.
+- Navegación con rutas type-safe (`@Serializable` en `ui/navigation/Destinations.kt`).
+  Los nombres de esas clases se serializan: no renombrarlas a la ligera.
+- Los mensajes puntuales de las pantallas viajan como `UiMessage` (un tipo, no un String),
+  para que los ViewModels no toquen recursos de Android. El castellano vive en strings.xml.
 - ViewModels exponen **`StateFlow<UiState>`**, nunca `LiveData` ni estado mutable público.
 - Toda operación de disco o red va en un dispatcher inyectado (`@IoDispatcher`), nunca
   `Dispatchers.IO` a pelo, para que los tests puedan sustituirlo.
@@ -99,11 +105,18 @@ dev.isaacru.bolsawidgets
   `sum(cantidad × precio) / sum(cantidad)`. Nunca la media aritmética.
 - La **variación del día** se mide siempre contra `previousClose` (cierre de la sesión
   anterior), no contra la apertura.
-- `CurrencyConverter` normaliza las cotizaciones en unidades menores: Yahoo devuelve `GBp`
-  (peniques) para varios valores de Londres. Sin esa normalización el error es de 100×.
+- **Unidades menores**: Yahoo cotiza algunos valores de Londres en `GBp` (peniques, con `p`
+  minúscula) y otros mercados en céntimos. `CurrencyConverter.normalizeCurrency` es la
+  **única** fuente de verdad de esa tabla, y tanto los cálculos como el formateo tienen que
+  pasar por ella. Ojo: `"GBp".uppercase()` es `"GBP"`, una divisa ISO perfectamente válida,
+  así que cualquier código que haga `Currency.getInstance(x.uppercase())` sin filtrar antes
+  muestra peniques como libras: error de 100×.
 - Una posición **sin cotización** (o sin tipo de cambio) aporta su coste de adquisición al
   valor total —para que el total no se quede corto en silencio— pero **P&L cero**, y su
   símbolo aparece en `PortfolioSummary.unpricedSymbols` para que la UI lo señale.
+- **Ningún símbolo entra en Room sin haber cotizado antes.** Tanto el alta en watchlist como
+  el guardado de una posición pasan por `QuoteRepository.resolveSymbol`, que hace una llamada
+  real al proveedor. Así no puede haber filas incotizables en la base de datos.
 
 ---
 
@@ -120,6 +133,11 @@ Yahoo Finance son endpoints públicos no documentados. Se asume que fallan.
   con su marca de hora. **Nunca** un mensaje de error en lugar del dato.
 - `getQuotes` no falla en bloque: los símbolos que fallan se omiten del resultado y cada uno
   conserva su valor cacheado por separado.
+- El **buscador de símbolos** (`/v1/finance/search`) es un segundo endpoint no documentado y
+  por tanto **opcional**: `SearchSymbolsUseCase` traga sus errores y los reporta como
+  `suggestionsUnavailable`. El camino garantizado es siempre resolver el ticker exacto contra
+  `v8/chart`. Si el buscador cae, la UI degrada a "escribe el ticker exacto", nunca se
+  bloquea un alta.
 - El endpoint de Yahoo sirve un símbolo por llamada, así que el batch es un fan-out con
   concurrencia limitada (4), no una petición agrupada.
 
