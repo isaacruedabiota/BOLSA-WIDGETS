@@ -9,3 +9,10 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Firma de release: nunca al repositorio.
+bolsa-release.jks
+keystore.properties
+
+# APK y plantillas generadas, no son fuente.
+dist/
