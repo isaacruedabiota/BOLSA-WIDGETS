@@ -3,6 +3,7 @@ package dev.isaacru.bolsawidgets.data.repository
 import dev.isaacru.bolsawidgets.data.local.dao.WatchlistDao
 import dev.isaacru.bolsawidgets.data.local.entity.WatchlistItemEntity
 import dev.isaacru.bolsawidgets.data.local.toDomain
+import dev.isaacru.bolsawidgets.data.local.toEntity
 import dev.isaacru.bolsawidgets.di.IoDispatcher
 import dev.isaacru.bolsawidgets.domain.model.WatchlistItem
 import dev.isaacru.bolsawidgets.domain.repository.WatchlistRepository
@@ -46,5 +47,11 @@ class WatchlistRepositoryImpl @Inject constructor(
 
     override suspend fun reorder(symbolsInOrder: List<String>) = withContext(io) {
         watchlistDao.replaceOrder(symbolsInOrder.map { it.trim().uppercase() })
+    }
+
+    override suspend fun replaceAll(items: List<WatchlistItem>) = withContext(io) {
+        watchlistDao.replaceAll(
+            items.mapIndexed { index, item -> item.copy(sortOrder = index).toEntity() },
+        )
     }
 }

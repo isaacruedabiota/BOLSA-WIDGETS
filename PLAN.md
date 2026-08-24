@@ -9,7 +9,7 @@ Estado a 23 de agosto de 2026.
 | 3 | WorkManager + `MarketClock` + caché y política de fallback | ✅ Completada |
 | 4 | Widgets 1 y 2 (watchlist y resumen de cartera), solo texto/layout | ✅ Completada |
 | 5 | Widgets 3 y 4 (sparkline y mapa de calor), renderizado a bitmap | ✅ Completada |
-| 6 | Detalle de valor con gráfico, CSV import/export, pulido | ⬜ Pendiente |
+| 6 | Detalle de valor con gráfico, CSV import/export, pulido | ✅ Completada |
 
 Cada fase termina con un commit convencional y una parada para que compiles y valides.
 
@@ -220,12 +220,59 @@ coinciden con los pesos que muestra la app; sparkline de SAN.MC a 1M con su grá
 
 ---
 
-## Fase 6 — Detalle y pulido ⬜
+## Fase 6 — Detalle y pulido ✅
 
-- Pantalla de detalle de valor con gráfico.
-  **A decidir contigo**: Compose Canvas a mano o añadir Vico como dependencia.
-- Import/export de cartera y watchlist en CSV.
-- Pulido general.
+**Entregado**
+
+- **Detalle de valor**: precio, variación, selector de rango 1D/1S/1M/1A, gráfico, mínimo
+  y máximo del periodo, y la tarjeta "Tu posición" con cantidad, precio medio, valor,
+  invertido y P&L cuando tienes el valor en cartera. Respeta el modo privacidad.
+- `PriceChart` dibujado con **Compose Canvas**, con el mismo lenguaje visual que el
+  sparkline del widget (línea, degradado debajo, referencia discontinua del cierre
+  anterior y punto en el último dato).
+- **Import/export CSV** en Ajustes, vía Storage Access Framework.
+- Se llega al detalle desde tres sitios: tocar una fila de Seguimiento, el botón de
+  gráfico en una tarjeta de Cartera, y el **deep link del widget**, que ya no aterriza en
+  Seguimiento sino en el valor concreto (el TODO que quedaba de la fase 4).
+- 14 tests nuevos de `PortfolioCsv`.
+
+**Decisiones tomadas**
+
+- **Compose Canvas, no Vico.** Es una sola pantalla, la geometría ya estaba resuelta para
+  el sparkline, y evita meter una dependencia fuera del stack fijado.
+- **Un único CSV** para cartera y seguimiento, distinguidos por la primera columna, para
+  que una copia de seguridad sea un solo archivo que guardar y un solo archivo que
+  restaurar.
+- **Importar reemplaza, no fusiona**, y lo dice antes de hacerlo: el archivo se analiza
+  primero y un diálogo muestra cuántas posiciones y valores trae y cuántas filas ilegibles
+  se van a ignorar. Fusionar duplicaría cada compra en la segunda importación, porque una
+  posición escrita a mano no tiene identidad natural.
+- Los decimales se escriben siempre con punto (la coma es el separador de campos) pero se
+  aceptan ambos al leer, porque una hoja de cálculo española reescribe el archivo con
+  comas.
+- Un salto de línea en las notas se aplana a un espacio al exportar, de modo que un
+  registro es siempre una línea y el parser puede seguir siendo línea a línea.
+- Una fila mal formada **no aborta la importación**: se salta, se cuenta y se avisa.
+- La importación **no valida los símbolos** contra el proveedor, a diferencia del alta
+  manual: restaurar una copia tiene que funcionar sin red. Un símbolo que ya no cotice sale
+  como "Sin precio" hasta el siguiente refresco.
+
+**Validado en emulador**: detalle de SAN.MC con gráfico intradía real y la tarjeta de
+posición cuadrando (100 × 12,706 = 1.270,60 €, P&L total +27,06 %); cambio a 1A trayendo un
+año de velas (mín 8,05 €, máx 12,91 €, +53,40 %); exportación a `/sdcard/Download` con las
+3 posiciones y 2 valores; importación de un CSV distinto que **reemplazó** el contenido
+(2 posiciones, 1 valor), conservó una nota con coma entrecomillada y saltó la fila rota;
+y el deep link de una fila de widget abriendo el detalle de IWDA.AS.
+
+**Corregido durante la validación**
+
+- La pantalla de detalle **crasheaba al abrirse**: en el primer frame el gráfico aún no
+  había empezado a cargar, así que el `when` caía en la rama de dibujar con la lista de
+  velas vacía y `closes.last()` lanzaba. Ahora el estado inicial ya es "cargando" y la rama
+  de dibujo comprueba los datos en vez de fiarse del flag.
+- Concordancia de plurales: el diálogo decía "1 valores" y "1 filas". Convertido a
+  `<plurals>`, que es la herramienta correcta, y de paso se eliminó el `if` de
+  singular/plural que había en dos pantallas.
 
 ---
 

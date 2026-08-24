@@ -34,8 +34,6 @@
     <string name="portfolio_empty_body">Añade tu primera compra para ver el valor y el P&amp;L de tu cartera en euros.</string>
     <string name="portfolio_add_position">Añadir posición</string>
     <string name="portfolio_unpriced_warning">Sin cotización para %1$s. Se cuenta a precio de coste y no suma P&amp;L.</string>
-    <string name="portfolio_lots_count">%1$d compras</string>
-    <string name="portfolio_one_lot">1 compra</string>
     <string name="portfolio_average_price">Precio medio %1$s</string>
     <string name="portfolio_quantity">%1$s títulos</string>
     <string name="portfolio_weight">%1$s de la cartera</string>
@@ -101,9 +99,33 @@
     <!-- Refresco / mensajes -->
     <string name="refresh_in_progress">Actualizando…</string>
     <string name="refresh_done">Datos actualizados</string>
-    <string name="refresh_partial">Actualizado con %1$d valores sin respuesta</string>
+
     <string name="refresh_failed">Sin conexión con el proveedor. Se mantienen los últimos datos guardados.</string>
     <string name="refresh_nothing">Nada que actualizar</string>
+
+    <!-- Detalle de valor -->
+    <string name="detail_no_quote">Sin cotización todavía para este valor.</string>
+    <string name="detail_not_held">No tienes posiciones en este valor.</string>
+    <string name="detail_chart_unavailable">No hay gráfico disponible para este rango.</string>
+    <string name="detail_your_position">Tu posición</string>
+    <string name="detail_range_low">Mín %1$s</string>
+    <string name="detail_range_high">Máx %1$s</string>
+    <string name="action_detail">Ver detalle</string>
+
+    <!-- Copia de seguridad -->
+    <string name="settings_backup_header">Copia de seguridad</string>
+    <string name="settings_backup_body">Un único CSV con tu cartera y tu lista de seguimiento.</string>
+    <string name="settings_export">Exportar a CSV</string>
+    <string name="settings_import">Importar desde CSV</string>
+    <string name="backup_export_done">Exportado: %1$s y %2$s</string>
+    <string name="backup_export_failed">No se ha podido escribir el archivo</string>
+    <string name="backup_import_failed">No se ha podido leer el archivo</string>
+    <string name="backup_import_empty">El archivo no tiene ninguna fila válida</string>
+    <string name="backup_import_title">¿Reemplazar tus datos?</string>
+    <string name="backup_import_body">El archivo tiene %1$s y %2$s. Se reemplazará todo lo que tienes ahora.</string>
+
+    <string name="backup_import_done">Importado: %1$s y %2$s</string>
+    <string name="action_replace">Reemplazar</string>
 
     <!-- Widgets -->
     <string name="widget_watchlist_label">Seguimiento</string>
@@ -133,6 +155,28 @@
     <string name="widget_config_pick">Elegir valor</string>
     <string name="widget_config_range">Rango del gráfico</string>
     <string name="widget_config_save">Añadir widget</string>
+
+    <!-- Cantidades: el castellano concuerda en singular, y "1 valores" canta mucho. -->
+    <plurals name="count_positions">
+        <item quantity="one">%d posición</item>
+        <item quantity="other">%d posiciones</item>
+    </plurals>
+    <plurals name="count_watchlist">
+        <item quantity="one">%d valor</item>
+        <item quantity="other">%d valores</item>
+    </plurals>
+    <plurals name="count_lots">
+        <item quantity="one">%d compra</item>
+        <item quantity="other">%d compras</item>
+    </plurals>
+    <plurals name="backup_import_skipped">
+        <item quantity="one">Se ignorará %d fila ilegible.</item>
+        <item quantity="other">Se ignorarán %d filas ilegibles.</item>
+    </plurals>
+    <plurals name="refresh_partial">
+        <item quantity="one">Actualizado, %d valor sin respuesta</item>
+        <item quantity="other">Actualizado, %d valores sin respuesta</item>
+    </plurals>
 
     <!-- Valores ocultos en modo privacidad -->
     <string name="value_hidden">••••</string>

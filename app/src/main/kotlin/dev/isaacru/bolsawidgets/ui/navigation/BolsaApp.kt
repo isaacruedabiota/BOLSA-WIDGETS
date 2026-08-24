@@ -27,6 +27,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dev.isaacru.bolsawidgets.R
+import dev.isaacru.bolsawidgets.ui.detail.SymbolDetailScreen
 import dev.isaacru.bolsawidgets.ui.portfolio.PortfolioScreen
 import dev.isaacru.bolsawidgets.ui.portfolio.PositionEditorScreen
 import dev.isaacru.bolsawidgets.ui.settings.SettingsScreen
@@ -53,9 +54,7 @@ fun BolsaApp(
 ) {
     LaunchedEffect(deepLinkSymbol) {
         if (deepLinkSymbol != null) {
-            // TODO(phase 6): route to the value detail screen once it exists. Until then
-            // a widget row lands on Seguimiento, where the symbol is listed.
-            navController.navigateToTab(WatchlistRoute)
+            navController.navigate(SymbolDetailRoute(deepLinkSymbol))
             onDeepLinkHandled()
         }
     }
@@ -90,17 +89,24 @@ fun BolsaApp(
                 PortfolioScreen(
                     onAddPosition = { navController.navigate(PositionEditorRoute()) },
                     onEditPosition = { id -> navController.navigate(PositionEditorRoute(id)) },
+                    onOpenSymbol = { symbol -> navController.navigate(SymbolDetailRoute(symbol)) },
                     modifier = Modifier.padding(innerPadding),
                 )
             }
             composable<WatchlistRoute> {
-                WatchlistScreen(modifier = Modifier.padding(innerPadding))
+                WatchlistScreen(
+                    onOpenSymbol = { symbol -> navController.navigate(SymbolDetailRoute(symbol)) },
+                    modifier = Modifier.padding(innerPadding),
+                )
             }
             composable<SettingsRoute> {
                 SettingsScreen(modifier = Modifier.padding(innerPadding))
             }
             composable<PositionEditorRoute> {
                 PositionEditorScreen(onDone = { navController.popBackStack() })
+            }
+            composable<SymbolDetailRoute> {
+                SymbolDetailScreen(onBack = { navController.popBackStack() })
             }
         }
     }

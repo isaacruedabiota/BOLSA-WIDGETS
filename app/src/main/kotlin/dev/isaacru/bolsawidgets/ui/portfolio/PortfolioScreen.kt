@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -43,6 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -64,6 +66,7 @@ import java.time.ZoneId
 fun PortfolioScreen(
     onAddPosition: () -> Unit,
     onEditPosition: (Long) -> Unit,
+    onOpenSymbol: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: PortfolioViewModel = hiltViewModel(),
 ) {
@@ -135,6 +138,7 @@ fun PortfolioScreen(
                     onToggle = {
                         expandedSymbol = valuation.position.symbol.takeIf { it != expandedSymbol }
                     },
+                    onOpen = { onOpenSymbol(valuation.position.symbol) },
                     onEditLot = onEditPosition,
                     onDeleteLot = viewModel::deleteLot,
                 )
@@ -262,6 +266,7 @@ private fun PositionCard(
     privacyMode: Boolean,
     expanded: Boolean,
     onToggle: () -> Unit,
+    onOpen: () -> Unit,
     onEditLot: (Long) -> Unit,
     onDeleteLot: (Long) -> Unit,
 ) {
@@ -293,10 +298,16 @@ private fun PositionCard(
                         style = MaterialTheme.typography.labelMedium,
                     )
                 }
+                IconButton(onClick = onOpen) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ShowChart,
+                        stringResource(R.string.action_detail),
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
                 Icon(
                     imageVector = if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
                     contentDescription = null,
-                    modifier = Modifier.padding(start = 6.dp),
                 )
             }
 
@@ -350,11 +361,7 @@ private fun PositionCard(
                 Column(modifier = Modifier.padding(top = 10.dp)) {
                     HorizontalDivider()
                     Text(
-                        text = if (lots.size == 1) {
-                            stringResource(R.string.portfolio_one_lot)
-                        } else {
-                            stringResource(R.string.portfolio_lots_count, lots.size)
-                        },
+                        text = pluralStringResource(R.plurals.count_lots, lots.size, lots.size),
                         style = MaterialTheme.typography.labelMedium,
                         modifier = Modifier.padding(vertical = 8.dp),
                     )

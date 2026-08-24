@@ -41,4 +41,9 @@ class PortfolioRepositoryImpl @Inject constructor(
     override suspend fun delete(id: Long) = withContext(io) {
         positionDao.deleteById(id)
     }
+
+    override suspend fun replaceAll(positions: List<Position>) = withContext(io) {
+        // Ids are reassigned by Room: a restored file carries no meaningful ones.
+        positionDao.replaceAll(positions.map { it.toEntity().copy(id = 0L) })
+    }
 }

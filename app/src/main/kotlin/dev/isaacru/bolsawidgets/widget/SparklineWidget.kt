@@ -44,7 +44,6 @@ import dev.isaacru.bolsawidgets.ui.theme.Loss
 import dev.isaacru.bolsawidgets.ui.theme.Neutral
 import dev.isaacru.bolsawidgets.widget.render.BitmapBudget
 import dev.isaacru.bolsawidgets.widget.render.SparklineRenderer
-import java.time.Duration
 
 /**
  * One configurable ticker with a sparkline.
@@ -72,7 +71,7 @@ class SparklineWidget : GlanceAppWidget() {
         val entryPoint = WidgetEntryPoint.from(context)
         val quotes = entryPoint.quoteRepository()
         val quote = symbol?.let { quotes.getCachedQuotes(listOf(it))[it.uppercase()] }
-        val series = symbol?.let { quotes.getCandleSeries(it, range, cacheMaxAge(range)) }
+        val series = symbol?.let { quotes.getCandleSeries(it, range, range.cacheMaxAge) }
 
         provideContent {
             GlanceTheme {
@@ -84,17 +83,6 @@ class SparklineWidget : GlanceAppWidget() {
     companion object {
         val KEY_SYMBOL = stringPreferencesKey("sparkline_symbol")
         val KEY_RANGE = stringPreferencesKey("sparkline_range")
-
-        /**
-         * How stale a series may get before it is refetched. A one-day chart moves every
-         * few minutes; a one-year chart does not change meaningfully within a day.
-         */
-        fun cacheMaxAge(range: ChartRange): Duration = when (range) {
-            ChartRange.DAY -> Duration.ofMinutes(15)
-            ChartRange.WEEK -> Duration.ofHours(1)
-            ChartRange.MONTH -> Duration.ofHours(6)
-            ChartRange.YEAR -> Duration.ofHours(24)
-        }
     }
 }
 

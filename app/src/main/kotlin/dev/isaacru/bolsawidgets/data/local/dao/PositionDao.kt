@@ -1,7 +1,9 @@
 package dev.isaacru.bolsawidgets.data.local.dao
 
 import androidx.room.Dao
+import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Upsert
 import dev.isaacru.bolsawidgets.data.local.entity.PositionEntity
 import kotlinx.coroutines.flow.Flow
@@ -29,4 +31,13 @@ interface PositionDao {
 
     @Query("DELETE FROM positions")
     suspend fun deleteAll()
+
+    @Insert
+    suspend fun insertAll(positions: List<PositionEntity>)
+
+    @Transaction
+    suspend fun replaceAll(positions: List<PositionEntity>) {
+        deleteAll()
+        insertAll(positions)
+    }
 }

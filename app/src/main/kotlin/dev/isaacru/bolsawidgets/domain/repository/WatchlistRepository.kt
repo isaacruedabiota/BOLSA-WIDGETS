@@ -17,4 +17,7 @@ interface WatchlistRepository {
 
     /** Persists [symbolsInOrder] as the new ordering. */
     suspend fun reorder(symbolsInOrder: List<String>)
+
+    /** Swaps the whole list for [items] in one transaction, for a backup restore. */
+    suspend fun replaceAll(items: List<WatchlistItem>)
 }

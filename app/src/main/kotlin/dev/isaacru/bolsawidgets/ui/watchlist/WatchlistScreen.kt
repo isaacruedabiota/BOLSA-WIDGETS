@@ -1,5 +1,6 @@
 package dev.isaacru.bolsawidgets.ui.watchlist
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -56,6 +57,7 @@ import java.time.ZoneId
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WatchlistScreen(
+    onOpenSymbol: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: WatchlistViewModel = hiltViewModel(),
 ) {
@@ -107,6 +109,7 @@ fun WatchlistScreen(
                     WatchlistCard(
                         row = row,
                         zoneId = viewModel.zoneId,
+                        onOpen = { onOpenSymbol(row.symbol) },
                         onMoveUp = { viewModel.moveUp(row.symbol) },
                         onMoveDown = { viewModel.moveDown(row.symbol) },
                         onRemove = { viewModel.remove(row.symbol) },
@@ -131,6 +134,7 @@ fun WatchlistScreen(
 private fun WatchlistCard(
     row: WatchlistRow,
     zoneId: ZoneId,
+    onOpen: () -> Unit,
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onRemove: () -> Unit,
@@ -140,7 +144,10 @@ private fun WatchlistCard(
 
     Card(modifier = Modifier.fillMaxWidth()) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(start = 14.dp, top = 10.dp, bottom = 10.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onOpen)
+                .padding(start = 14.dp, top = 10.dp, bottom = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {

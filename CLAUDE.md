@@ -117,6 +117,10 @@ dev.isaacru.bolsawidgets
 - **Ningún símbolo entra en Room sin haber cotizado antes.** Tanto el alta en watchlist como
   el guardado de una posición pasan por `QuoteRepository.resolveSymbol`, que hace una llamada
   real al proveedor. Así no puede haber filas incotizables en la base de datos.
+  - **Única excepción: la importación de CSV**, que no valida contra el proveedor a
+    propósito. Restaurar una copia de seguridad tiene que funcionar sin red; un símbolo que
+    ya no cotice aparecerá honestamente como "Sin precio" y en `unpricedSymbols` hasta el
+    siguiente refresco.
 
 ---
 
@@ -204,7 +208,24 @@ Yahoo Finance son endpoints públicos no documentados. Se asume que fallan.
 
 ---
 
-## 8. Tests
+## 8. Copia de seguridad (CSV)
+
+- **Un solo archivo** con cartera y seguimiento, distinguidos por la primera columna
+  (`posicion` / `seguimiento`). Cabecera en español; es un archivo que el usuario abre.
+- Decimales **siempre con punto** al escribir —la coma es el separador de campos— y se
+  aceptan ambos al leer, porque las hojas de cálculo españolas reescriben con comas.
+- Los saltos de línea se aplanan a espacios al exportar: un registro es una línea, y así
+  el parser puede ser línea a línea.
+- **Importar reemplaza**, nunca fusiona, y avisa antes con el recuento. Fusionar
+  duplicaría cada compra en la segunda importación: una posición escrita a mano no tiene
+  identidad natural con la que deduplicar.
+- Una fila ilegible se salta y se cuenta; nunca aborta el archivo entero.
+- El acceso al archivo (SAF, `ContentResolver`) vive en la pantalla, no en el ViewModel:
+  `BackupRepository` solo habla de texto, así el ViewModel no necesita `Context`.
+
+---
+
+## 9. Tests
 
 Obligatorios, con JUnit puro (sin Robolectric ni instrumentación):
 
@@ -224,7 +245,7 @@ Ejecutar: `./gradlew :app:testDebugUnitTest`
 
 ---
 
-## 9. Git
+## 10. Git
 
 - Un commit por fase, [Conventional Commits](https://www.conventionalcommits.org/):
   `feat:`, `fix:`, `chore:`, `test:`, `docs:`, `refactor:`.
@@ -232,7 +253,7 @@ Ejecutar: `./gradlew :app:testDebugUnitTest`
 
 ---
 
-## 10. No-objetivos
+## 11. No-objetivos
 
 No implementar, y no proponer:
 

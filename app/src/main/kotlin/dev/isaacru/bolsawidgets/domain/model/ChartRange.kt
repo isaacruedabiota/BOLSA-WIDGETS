@@ -15,6 +15,19 @@ enum class ChartRange(val label: String) {
             MONTH -> CandleInterval.DAY_1
             YEAR -> CandleInterval.DAY_1
         }
+
+    /**
+     * How stale a cached series of this span may get before refetching is worth the
+     * network. A one-day chart moves every few minutes; a one-year chart does not change
+     * meaningfully within a day.
+     */
+    val cacheMaxAge: java.time.Duration
+        get() = when (this) {
+            DAY -> java.time.Duration.ofMinutes(15)
+            WEEK -> java.time.Duration.ofHours(1)
+            MONTH -> java.time.Duration.ofHours(6)
+            YEAR -> java.time.Duration.ofHours(24)
+        }
 }
 
 /** Bar size of a chart request. */

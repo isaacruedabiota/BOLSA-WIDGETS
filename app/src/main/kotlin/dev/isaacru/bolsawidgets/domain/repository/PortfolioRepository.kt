@@ -19,4 +19,10 @@ interface PortfolioRepository {
     suspend fun upsert(position: Position): Long
 
     suspend fun delete(id: Long)
+
+    /**
+     * Swaps the whole portfolio for [positions] in one transaction. Used only when
+     * restoring a backup, where a half-applied import would be worse than none.
+     */
+    suspend fun replaceAll(positions: List<Position>)
 }

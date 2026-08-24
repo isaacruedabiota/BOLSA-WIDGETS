@@ -35,6 +35,12 @@ interface WatchlistDao {
     suspend fun deleteAll()
 
     @Transaction
+    suspend fun replaceAll(items: List<WatchlistItemEntity>) {
+        deleteAll()
+        upsertAll(items)
+    }
+
+    @Transaction
     suspend fun replaceOrder(symbolsInOrder: List<String>) {
         val existing = getAll().associateBy { it.symbol }
         val reordered = symbolsInOrder.mapIndexedNotNull { index, symbol ->

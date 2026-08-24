@@ -161,6 +161,7 @@ class RefreshMarketDataUseCaseTest {
         override suspend fun getPosition(id: Long): Position? = positions.firstOrNull { it.id == id }
         override suspend fun upsert(position: Position): Long = position.id
         override suspend fun delete(id: Long) = Unit
+        override suspend fun replaceAll(positions: List<Position>) = Unit
     }
 
     private class FakeWatchlistRepository(private val items: List<WatchlistItem>) : WatchlistRepository {
@@ -169,6 +170,7 @@ class RefreshMarketDataUseCaseTest {
         override suspend fun add(symbol: String, name: String) = Unit
         override suspend fun remove(symbol: String) = Unit
         override suspend fun reorder(symbolsInOrder: List<String>) = Unit
+        override suspend fun replaceAll(items: List<WatchlistItem>) = Unit
     }
 
     private class FakeQuoteRepository(
