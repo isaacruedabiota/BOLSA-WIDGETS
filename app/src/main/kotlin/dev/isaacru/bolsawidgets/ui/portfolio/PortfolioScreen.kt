@@ -2,6 +2,7 @@ package dev.isaacru.bolsawidgets.ui.portfolio
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,10 +22,15 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.automirrored.filled.ShowChart
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.WarningAmber
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -35,7 +41,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -47,11 +55,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.isaacru.bolsawidgets.R
+import dev.isaacru.bolsawidgets.domain.calc.RepeatPurchase
 import dev.isaacru.bolsawidgets.domain.model.PortfolioSummary
 import dev.isaacru.bolsawidgets.domain.model.Position
 import dev.isaacru.bolsawidgets.domain.model.PositionValuation
@@ -73,6 +83,7 @@ fun PortfolioScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var expandedSymbol by remember { mutableStateOf<String?>(null) }
+    var repeatTarget by remember { mutableStateOf<PositionValuation?>(null) }
 
     SnackbarMessages(viewModel.messages, snackbarHostState)
 
@@ -139,13 +150,105 @@ fun PortfolioScreen(
                         expandedSymbol = valuation.position.symbol.takeIf { it != expandedSymbol }
                     },
                     onOpen = { onOpenSymbol(valuation.position.symbol) },
+                    onRepeatPurchase = { repeatTarget = valuation },
                     onEditLot = onEditPosition,
                     onDeleteLot = viewModel::deleteLot,
                 )
             }
         }
     }
+
+    val target = repeatTarget
+    if (target != null) {
+        RepeatPurchaseDialog(
+            valuation = target,
+            lots = state.lotsBySymbol[target.position.symbol].orEmpty(),
+            onDismiss = { repeatTarget = null },
+            onConfirm = { amount, price ->
+                viewModel.repeatPurchase(target.position.symbol, amount, price)
+                repeatTarget = null
+            },
+        )
+    }
 }
+
+@Composable
+private fun RepeatPurchaseDialog(
+    valuation: PositionValuation,
+    lots: List<Position>,
+    onDismiss: () -> Unit,
+    onConfirm: (Double, Double) -> Unit,
+) {
+    val symbol = valuation.position.symbol
+    val lastLot = remember(lots, symbol) { RepeatPurchase.lastLot(lots, symbol) }
+    var amountText by remember(symbol) {
+        mutableStateOf(lastLot?.let { Format.editable(RepeatPurchase.amountOf(it), 2) }.orEmpty())
+    }
+    var priceText by remember(symbol) {
+        mutableStateOf(valuation.quote?.let { Format.editable(it.price, 4) }.orEmpty())
+    }
+
+    val amount = amountText.toDecimalOrNull()
+    val price = priceText.toDecimalOrNull()
+    val quantity = if (amount != null && price != null) {
+        RepeatPurchase.quantityFor(amount, price)
+    } else {
+        null
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.repeat_title, symbol)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = stringResource(R.string.repeat_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                OutlinedTextField(
+                    value = amountText,
+                    onValueChange = { amountText = it },
+                    label = { Text(stringResource(R.string.repeat_amount, valuation.position.currency)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = priceText,
+                    onValueChange = { priceText = it },
+                    label = { Text(stringResource(R.string.repeat_price)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(
+                    text = quantity
+                        ?.let { stringResource(R.string.repeat_quantity, Format.quantity(it)) }
+                        ?: stringResource(R.string.repeat_invalid),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (quantity == null) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { if (amount != null && price != null) onConfirm(amount, price) },
+                enabled = quantity != null,
+            ) { Text(stringResource(R.string.repeat_confirm)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+        },
+    )
+}
+
+/** Accepts either decimal separator, like the position editor. */
+private fun String.toDecimalOrNull(): Double? = trim().replace(',', '.').toDoubleOrNull()
 
 @Composable
 private fun SummaryCard(
@@ -267,10 +370,13 @@ private fun PositionCard(
     expanded: Boolean,
     onToggle: () -> Unit,
     onOpen: () -> Unit,
+    onRepeatPurchase: () -> Unit,
     onEditLot: (Long) -> Unit,
     onDeleteLot: (Long) -> Unit,
 ) {
     val position = valuation.position
+    var menuOpen by remember { mutableStateOf(false) }
+
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.clickable(onClick = onToggle).padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -298,12 +404,30 @@ private fun PositionCard(
                         style = MaterialTheme.typography.labelMedium,
                     )
                 }
-                IconButton(onClick = onOpen) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.ShowChart,
-                        stringResource(R.string.action_detail),
-                        modifier = Modifier.size(20.dp),
-                    )
+                Box {
+                    IconButton(onClick = { menuOpen = true }) {
+                        Icon(Icons.Filled.MoreVert, stringResource(R.string.action_more))
+                    }
+                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.action_detail)) },
+                            leadingIcon = {
+                                Icon(Icons.AutoMirrored.Filled.ShowChart, contentDescription = null)
+                            },
+                            onClick = {
+                                menuOpen = false
+                                onOpen()
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.action_repeat_purchase)) },
+                            leadingIcon = { Icon(Icons.Filled.Repeat, contentDescription = null) },
+                            onClick = {
+                                menuOpen = false
+                                onRepeatPurchase()
+                            },
+                        )
+                    }
                 }
                 Icon(
                     imageVector = if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,

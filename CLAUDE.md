@@ -103,6 +103,13 @@ dev.isaacru.bolsawidgets
   cartera se valora íntegramente a tipo de cambio de hoy.
 - Varias `Position` del mismo `symbol` se agregan con **precio medio ponderado por cantidad**:
   `sum(cantidad × precio) / sum(cantidad)`. Nunca la media aritmética.
+- Un **plan de inversión** compra un importe fijo, no un número fijo de títulos: la cantidad
+  es fraccionaria y cambia cada mes. Por eso "repetir compra" (`RepeatPurchase`) pide
+  importe y precio y **deriva** la cantidad; lo que se arrastra del mes anterior es el
+  importe, que es lo único que se repite.
+- `Format.editable` existe aparte de `Format.plain` porque un número que va a un campo de
+  texto **no puede llevar separador de miles**: en castellano es un punto, y al normalizar
+  la coma decimal "2.450,00" deja de ser parseable.
 - La **variación del día** se mide siempre contra `previousClose` (cierre de la sesión
   anterior), no contra la apertura.
 - **Unidades menores**: Yahoo cotiza algunos valores de Londres en `GBp` (peniques, con `p`

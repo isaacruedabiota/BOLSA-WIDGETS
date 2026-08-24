@@ -3,6 +3,7 @@ package dev.isaacru.bolsawidgets.ui.portfolio
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.isaacru.bolsawidgets.domain.calc.RepeatPurchase
 import dev.isaacru.bolsawidgets.domain.model.PortfolioSummary
 import dev.isaacru.bolsawidgets.domain.model.Position
 import dev.isaacru.bolsawidgets.domain.repository.PortfolioRepository
@@ -19,7 +20,9 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.Clock
 import java.time.Duration
+import java.time.LocalDate
 import java.time.ZoneId
 import javax.inject.Inject
 
@@ -38,6 +41,7 @@ class PortfolioViewModel @Inject constructor(
     settingsRepository: SettingsRepository,
     private val portfolioRepository: PortfolioRepository,
     private val refreshMarketData: RefreshMarketDataUseCase,
+    private val clock: Clock,
     val zoneId: ZoneId,
 ) : ViewModel() {
 
@@ -68,6 +72,22 @@ class PortfolioViewModel @Inject constructor(
     /** The manual refresh button. Always hits the network. */
     fun refresh() {
         viewModelScope.launch { runRefresh(Duration.ZERO, announce = true) }
+    }
+
+    /**
+     * Adds this month's instalment of a savings plan: same instrument, today, for
+     * [amount] at [price]. The share count is derived because that is the part that
+     * changes every month.
+     */
+    fun repeatPurchase(symbol: String, amount: Double, price: Double) {
+        viewModelScope.launch {
+            val lastLot = RepeatPurchase.lastLot(portfolioRepository.getPositions(), symbol)
+                ?: return@launch
+            val draft = RepeatPurchase.draft(lastLot, amount, price, LocalDate.now(clock))
+                ?: return@launch
+            portfolioRepository.upsert(draft)
+            messageChannel.send(UiMessage.PurchaseAdded(symbol))
+        }
     }
 
     fun deleteLot(id: Long) {

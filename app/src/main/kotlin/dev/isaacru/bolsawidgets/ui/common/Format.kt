@@ -72,14 +72,16 @@ object Format {
         }
     }
 
-    /** Share counts, which may be fractional. Trailing zeros are dropped. */
-    fun quantity(value: Double): String {
-        val format = NumberFormat.getNumberInstance(LOCALE).apply {
-            maximumFractionDigits = 6
+    /**
+     * Share counts, which may be fractional: a savings plan buys 0,5241 shares, not 1.
+     * Four decimals is what a broker shows; trailing zeros are dropped so a whole number
+     * of shares does not read as "10,0000".
+     */
+    fun quantity(value: Double, maxDecimals: Int = 4): String =
+        NumberFormat.getNumberInstance(LOCALE).apply {
+            maximumFractionDigits = maxDecimals
             minimumFractionDigits = 0
-        }
-        return format.format(value)
-    }
+        }.format(value)
 
     /**
      * The ISO currency to format with, or null when the code has no ISO equivalent that
@@ -91,6 +93,20 @@ object Format {
         if (CurrencyConverter.isMinorUnit(currency)) return null
         return runCatching { Currency.getInstance(currency.trim().uppercase()) }.getOrNull()
     }
+
+    /**
+     * A number destined for a text field the user will edit and the app will parse back.
+     *
+     * Grouping separators are dropped on purpose: in Spanish the thousands separator is a
+     * dot, so "2.450,00" stops being parseable the moment the comma is normalised to a
+     * decimal point. Display formatting and editable formatting are not the same job.
+     */
+    fun editable(value: Double, decimals: Int): String =
+        NumberFormat.getNumberInstance(LOCALE).apply {
+            isGroupingUsed = false
+            maximumFractionDigits = decimals
+            minimumFractionDigits = 0
+        }.format(value)
 
     fun plain(value: Double, decimals: Int): String =
         NumberFormat.getNumberInstance(LOCALE).apply {

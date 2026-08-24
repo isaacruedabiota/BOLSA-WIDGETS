@@ -276,6 +276,20 @@ y el deep link de una fila de widget abriendo el detalle de IWDA.AS.
 
 ---
 
+## Después de la v1
+
+**Repetir compra** (aportación mensual de un plan de inversión). Desde el menú de cada
+tarjeta de Cartera: prerrellena el importe del último lote y el precio actual, deriva los
+títulos y añade la compra con la fecha de hoy. La cantidad se deriva porque en un plan de
+TR lo fijo es el importe, no los títulos.
+
+Corregido al validarlo: el importe se prerrellenaba con `Format.plain`, que mete separador
+de miles, así que "2.450,00" no se podía volver a parsear y el botón salía deshabilitado.
+Ahora hay `Format.editable` para los números que van a un campo editable, con un test que
+comprueba el ida y vuelta.
+
+---
+
 ## Criterios de aceptación v1
 
 - [ ] 5 posiciones y 10 símbolos de watchlist añadidos a mano.

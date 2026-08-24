@@ -111,6 +111,17 @@
     <string name="detail_range_low">Mín %1$s</string>
     <string name="detail_range_high">Máx %1$s</string>
     <string name="action_detail">Ver detalle</string>
+    <string name="action_repeat_purchase">Repetir compra</string>
+
+    <!-- Repetir la compra mensual de un plan de inversión -->
+    <string name="repeat_title">Repetir compra en %1$s</string>
+    <string name="repeat_body">En un plan de inversión lo que se repite es el importe: los títulos salen del precio de este mes.</string>
+    <string name="repeat_amount">Importe (%1$s)</string>
+    <string name="repeat_price">Precio por título</string>
+    <string name="repeat_quantity">Compras %1$s títulos</string>
+    <string name="repeat_invalid">Revisa el importe y el precio</string>
+    <string name="repeat_confirm">Añadir compra</string>
+    <string name="purchase_added">Compra añadida a %1$s</string>
 
     <!-- Copia de seguridad -->
     <string name="settings_backup_header">Copia de seguridad</string>

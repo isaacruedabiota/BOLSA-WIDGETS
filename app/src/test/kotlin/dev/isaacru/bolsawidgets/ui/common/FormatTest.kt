@@ -56,5 +56,22 @@ class FormatTest {
         assertEquals("15/01/2026", Format.date(LocalDate.of(2026, 1, 15)))
     }
 
+    @Test
+    fun `an editable number carries no thousands separator`() {
+        // "2.450,00" would stop being parseable the moment the comma is normalised.
+        assertEquals("2450", Format.editable(2450.0, 2))
+        assertEquals("2450,5", Format.editable(2450.5, 2))
+        assertEquals("12,702", Format.editable(12.702, 4))
+    }
+
+    @Test
+    fun `what editable writes, the app can read back`() {
+        listOf(2450.0, 12.702, 0.5241, 1234567.89).forEach { value ->
+            val text = Format.editable(value, 4)
+            val parsed = text.replace(',', '.').toDoubleOrNull()
+            assertEquals("no parseable: " + text, value, parsed!!, 1e-4)
+        }
+    }
+
     private fun String.normalizeSpaces(): String = replace(' ', ' ').replace(' ', ' ')
 }
