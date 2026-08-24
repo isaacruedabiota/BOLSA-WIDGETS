@@ -10,6 +10,7 @@ import dev.isaacru.bolsawidgets.domain.model.Quote
 import dev.isaacru.bolsawidgets.domain.model.WatchlistItem
 import dev.isaacru.bolsawidgets.domain.repository.PortfolioRepository
 import dev.isaacru.bolsawidgets.domain.repository.QuoteRepository
+import dev.isaacru.bolsawidgets.domain.repository.CandleSeries
 import dev.isaacru.bolsawidgets.domain.repository.RefreshOutcome
 import dev.isaacru.bolsawidgets.domain.repository.WatchlistRepository
 import kotlinx.coroutines.flow.Flow
@@ -197,6 +198,11 @@ class RefreshMarketDataUseCaseTest {
             range: ChartRange,
             interval: CandleInterval,
         ): List<Candle> = emptyList()
+        override suspend fun getCandleSeries(
+            symbol: String,
+            range: ChartRange,
+            maxAge: Duration,
+        ): CandleSeries? = null
 
         override suspend fun resolveSymbol(symbol: String): Quote? = cached[symbol.uppercase()]
     }

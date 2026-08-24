@@ -149,8 +149,17 @@ Yahoo Finance son endpoints públicos no documentados. Se asume que fallan.
   dibujan en un `Bitmap` con `android.graphics.Canvas` en el worker o el provider y se
   muestran con `Image(ImageProvider(bitmap))`.
 - El bitmap se dimensiona con `LocalSize.current`, nunca a tamaño fijo.
-- Vigilar el límite de ~1,5 MB del bundle de `RemoteViews`: comprimir y dimensionar en
-  consecuencia. Ante la duda, reducir resolución antes que arriesgar un `TransactionTooLargeException`.
+- Vigilar el límite de ~1,5 MB del bundle de `RemoteViews`: `BitmapBudget` recorta el
+  tamaño antes de dibujar. Ante la duda, reducir resolución antes que arriesgar un
+  `TransactionTooLargeException`.
+- Los widgets de bitmap usan `SizeMode.Exact`, porque el dibujo tiene que hacerse al tamaño
+  real y no a un tamaño redondeado.
+- La geometría y el color van en funciones puras (`Treemap`, `HeatScale`, `BitmapBudget`)
+  separadas del dibujo, para que se puedan testear sin Android.
+- Al medir texto para una celda, **encogerlo hasta que quepa**, nunca omitirlo: dos tickers
+  de la misma longitud no miden lo mismo y un umbral de todo o nada deja celdas mudas.
+- El estado por instancia de widget (símbolo y rango del sparkline) vive en
+  `PreferencesGlanceStateDefinition`, y lo escribe la activity de configuración.
 - Cada widget lleva su propio botón de refresco manual, que **ignora el horario de mercado**
   igual que el de la app.
 - Glance instancia los `GlanceAppWidget` el framework, no Hilt: las dependencias se obtienen

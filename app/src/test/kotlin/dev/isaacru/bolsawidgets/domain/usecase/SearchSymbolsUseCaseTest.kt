@@ -6,6 +6,7 @@ import dev.isaacru.bolsawidgets.domain.model.CandleInterval
 import dev.isaacru.bolsawidgets.domain.model.ChartRange
 import dev.isaacru.bolsawidgets.domain.model.Quote
 import dev.isaacru.bolsawidgets.domain.repository.QuoteRepository
+import dev.isaacru.bolsawidgets.domain.repository.CandleSeries
 import dev.isaacru.bolsawidgets.domain.repository.RefreshOutcome
 import dev.isaacru.bolsawidgets.domain.search.SymbolSearch
 import dev.isaacru.bolsawidgets.domain.search.SymbolSuggestion
@@ -157,5 +158,10 @@ class SearchSymbolsUseCaseTest {
             range: ChartRange,
             interval: CandleInterval,
         ): List<Candle> = emptyList()
+        override suspend fun getCandleSeries(
+            symbol: String,
+            range: ChartRange,
+            maxAge: Duration,
+        ): CandleSeries? = null
     }
 }

@@ -44,6 +44,21 @@ data class CachedQuoteEntity(
     val fetchedAtEpochMillis: Long,
 )
 
+/**
+ * A whole candle series for one symbol and range, stored as JSON in a single row.
+ *
+ * One row per bar would mean thousands of rows for a 1Y chart and buy nothing: the series
+ * is only ever read and written as a unit, to draw a sparkline.
+ */
+@Entity(tableName = "cached_candles", primaryKeys = ["symbol", "chartRange"])
+data class CachedCandlesEntity(
+    val symbol: String,
+    /** [dev.isaacru.bolsawidgets.domain.model.ChartRange] name. */
+    val chartRange: String,
+    val seriesJson: String,
+    val fetchedAtEpochMillis: Long,
+)
+
 @Entity(tableName = "fx_rates")
 data class FxRateEntity(
     /** Concatenated ISO codes, e.g. "USDEUR". */

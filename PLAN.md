@@ -8,7 +8,7 @@ Estado a 23 de agosto de 2026.
 | 2 | App Compose: cartera, watchlist, ajustes, contra datos reales | ✅ Completada |
 | 3 | WorkManager + `MarketClock` + caché y política de fallback | ✅ Completada |
 | 4 | Widgets 1 y 2 (watchlist y resumen de cartera), solo texto/layout | ✅ Completada |
-| 5 | Widgets 3 y 4 (sparkline y mapa de calor), renderizado a bitmap | ⬜ Pendiente |
+| 5 | Widgets 3 y 4 (sparkline y mapa de calor), renderizado a bitmap | ✅ Completada |
 | 6 | Detalle de valor con gráfico, CSV import/export, pulido | ⬜ Pendiente |
 
 Cada fase termina con un commit convencional y una parada para que compiles y valides.
@@ -175,13 +175,48 @@ detalle es de la fase 6. El deep link ya lleva el símbolo y solo hay que enruta
 
 ---
 
-## Fase 5 — Widgets con bitmap ⬜
+## Fase 5 — Widgets con bitmap ✅
 
-- **Valor + sparkline** (2x2, 4x2): configuración de símbolo y rango (1D/1S/1M/1A) al añadir.
-- **Mapa de calor** (4x4): treemap tipo Finviz, área por peso, color por variación del día
-  (escala roja→gris→verde saturada en ±3%).
-- Renderizado a `Bitmap` con `android.graphics.Canvas`, escalado con `LocalSize.current`,
-  vigilando el límite de ~1,5 MB de `RemoteViews`.
+**Entregado**
+
+- **Valor con gráfico** (2x2, 4x2): un ticker configurable con precio grande, variación y
+  sparkline. `SparklineConfigActivity` se lanza al colocar el widget y reutiliza el
+  buscador de símbolos; el rango (1D/1S/1M/1A) se elige ahí. El widget es
+  `reconfigurable`, así que se puede cambiar después desde el lápiz del launcher.
+- **Mapa de calor** (4x4): treemap tipo Finviz. Área por peso en cartera, color por la
+  variación del día en una escala roja→gris→verde saturada a ±3 %.
+- `SparklineRenderer` y `HeatmapRenderer` dibujan con `android.graphics.Canvas` sobre un
+  `Bitmap`, dimensionado desde `LocalSize.current` y la densidad real.
+- `BitmapBudget` recorta el tamaño para no pasar del bundle de `RemoteViews`.
+- Caché de velas en Room (tabla `cached_candles`, **migración 1→2**): el sparkline dibuja
+  sin red y solo refetch cuando la serie supera la antigüedad de su rango
+  (15 min para 1D, 1 h para 1S, 6 h para 1M, 24 h para 1A).
+- 20 tests nuevos: `TreemapTest`, `HeatScaleTest`, `BitmapBudgetTest`.
+
+**Decisiones tomadas**
+
+- El treemap es **squarified**, no slice-and-dice: con doce posiciones iguales el peor
+  ratio de aspecto baja de 12 a menos de 3, que es la diferencia entre un mapa legible y
+  una persiana. Cubierto por un test.
+- La serie de velas se guarda como **una fila JSON por (símbolo, rango)** en vez de una
+  fila por vela: solo se lee y escribe entera, y un 1A serían cientos de filas por nada.
+- `SizeMode.Exact` en los dos widgets de bitmap: redondear a tamaños predefinidos
+  emborronaría el dibujo o desperdiciaría píxeles.
+- Las velas se piden dentro de `provideGlance` con la política cache-first, en vez de
+  que el worker sepa qué sparklines hay configurados. Menos acoplamiento y el coste está
+  acotado por la antigüedad máxima.
+
+**Validado en emulador**: migración 1→2 sobre una base de datos con datos (posiciones
+intactas, tabla nueva creada); mapa de calor con tres posiciones reales (AAPL 52,26 % en
+rojo apagado, SAN.MC 24,76 % verde intenso, ITX.MC 22,98 % verde suave) y áreas que
+coinciden con los pesos que muestra la app; sparkline de SAN.MC a 1M con su gráfico real.
+
+**Corregido durante la validación**
+
+- El mapa de calor dejaba celdas **sin etiqueta**: medía el texto y, si no cabía, no
+  dibujaba nada. Dos tickers de la misma longitud no miden lo mismo ("SAN.MC" es más ancho
+  que "ITX.MC"), así que unas celdas salían etiquetadas y otras no. Ahora el texto se
+  encoge hasta caber.
 
 ---
 

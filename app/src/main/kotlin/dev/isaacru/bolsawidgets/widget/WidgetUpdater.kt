@@ -20,5 +20,7 @@ class WidgetUpdater @Inject constructor(
     suspend fun updateAll() {
         WatchlistWidget().updateAll(context)
         PortfolioWidget().updateAll(context)
+        SparklineWidget().updateAll(context)
+        HeatmapWidget().updateAll(context)
     }
 }

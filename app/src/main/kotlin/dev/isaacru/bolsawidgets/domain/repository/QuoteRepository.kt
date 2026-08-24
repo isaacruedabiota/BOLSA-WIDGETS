@@ -43,11 +43,35 @@ interface QuoteRepository {
     ): List<Candle>
 
     /**
+     * Candles for a chart, cache-first.
+     *
+     * Returns the cached series untouched while it is younger than [maxAge]; otherwise
+     * fetches and stores a new one. A failed fetch falls back to whatever is cached, so a
+     * sparkline on the home screen keeps its shape offline instead of going blank.
+     * Returns null only when there is neither cache nor network.
+     */
+    suspend fun getCandleSeries(
+        symbol: String,
+        range: ChartRange,
+        maxAge: java.time.Duration,
+    ): CandleSeries?
+
+    /**
      * Checks that [symbol] is a ticker the active provider can actually price, returning
      * the quote it resolved to. Returns null when the symbol does not exist.
      * Nothing is written to the watchlist or the portfolio without passing through here.
      */
     suspend fun resolveSymbol(symbol: String): Quote?
+}
+
+/** A cached candle series together with the moment it was stored. */
+data class CandleSeries(
+    val symbol: String,
+    val range: ChartRange,
+    val candles: List<Candle>,
+    val fetchedAt: Instant,
+) {
+    val isEmpty: Boolean get() = candles.isEmpty()
 }
 
 /** What a refresh managed to do. Never an error: partial success is the normal case. */

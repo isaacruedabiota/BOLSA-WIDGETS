@@ -48,6 +48,41 @@
                 android:resource="@xml/portfolio_widget_info" />
         </receiver>
 
+        <receiver
+            android:name=".widget.SparklineWidgetReceiver"
+            android:exported="false"
+            android:label="@string/widget_sparkline_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/sparkline_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.HeatmapWidgetReceiver"
+            android:exported="false"
+            android:label="@string/widget_heatmap_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/heatmap_widget_info" />
+        </receiver>
+
+        <!-- Started by the launcher before the sparkline widget is placed, so exported. -->
+        <activity
+            android:name=".widget.SparklineConfigActivity"
+            android:exported="true"
+            android:label="@string/widget_config_title"
+            android:theme="@style/Theme.BolsaWidgets">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
         <!--
             WorkManager is initialised on demand from BolsaWidgetsApp so that Hilt can
             supply the worker factory. Only its initializer is removed; any other

@@ -1,10 +1,15 @@
 package dev.isaacru.bolsawidgets.data.repository
 
+import dev.isaacru.bolsawidgets.data.local.CandleWire
+import dev.isaacru.bolsawidgets.data.local.dao.CandleCacheDao
 import dev.isaacru.bolsawidgets.data.local.dao.FxRateDao
 import dev.isaacru.bolsawidgets.data.local.dao.QuoteCacheDao
+import dev.isaacru.bolsawidgets.data.local.entity.CachedCandlesEntity
 import dev.isaacru.bolsawidgets.data.local.toCacheEntity
 import dev.isaacru.bolsawidgets.data.local.toDomain
+import dev.isaacru.bolsawidgets.data.local.toDomain as candleToDomain
 import dev.isaacru.bolsawidgets.data.local.toEntity
+import dev.isaacru.bolsawidgets.data.local.toWire
 import dev.isaacru.bolsawidgets.di.IoDispatcher
 import dev.isaacru.bolsawidgets.domain.calc.CurrencyConverter
 import dev.isaacru.bolsawidgets.domain.model.Candle
@@ -14,6 +19,7 @@ import dev.isaacru.bolsawidgets.domain.model.FxRate
 import dev.isaacru.bolsawidgets.domain.model.Quote
 import dev.isaacru.bolsawidgets.domain.provider.ProviderId
 import dev.isaacru.bolsawidgets.domain.provider.QuoteProvider
+import dev.isaacru.bolsawidgets.domain.repository.CandleSeries
 import dev.isaacru.bolsawidgets.domain.repository.QuoteRepository
 import dev.isaacru.bolsawidgets.domain.repository.RefreshOutcome
 import dev.isaacru.bolsawidgets.domain.repository.SettingsRepository
@@ -21,6 +27,8 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.Json
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -38,6 +46,8 @@ import javax.inject.Singleton
 class QuoteRepositoryImpl @Inject constructor(
     private val quoteCacheDao: QuoteCacheDao,
     private val fxRateDao: FxRateDao,
+    private val candleCacheDao: CandleCacheDao,
+    private val json: Json,
     private val providers: Map<ProviderId, @JvmSuppressWildcards QuoteProvider>,
     private val settingsRepository: SettingsRepository,
     private val clock: Clock,
@@ -134,6 +144,52 @@ class QuoteRepositoryImpl @Inject constructor(
         interval: CandleInterval,
     ): List<Candle> = withContext(io) {
         activeProvider().getCandles(symbol.uppercase(), range, interval)
+    }
+
+    override suspend fun getCandleSeries(
+        symbol: String,
+        range: ChartRange,
+        maxAge: Duration,
+    ): CandleSeries? = withContext(io) {
+        val normalized = symbol.trim().uppercase()
+        if (normalized.isEmpty()) return@withContext null
+
+        val now = Instant.now(clock)
+        val cached = candleCacheDao.get(normalized, range.name)?.let { row ->
+            runCatching {
+                CandleSeries(
+                    symbol = row.symbol,
+                    range = range,
+                    candles = json.decodeFromString(ListSerializer(CandleWire.serializer()), row.seriesJson)
+                        .map { it.candleToDomain() },
+                    fetchedAt = Instant.ofEpochMilli(row.fetchedAtEpochMillis),
+                )
+            }.getOrNull()
+        }
+
+        val isFresh = cached != null && Duration.between(cached.fetchedAt, now) < maxAge
+        if (isFresh) return@withContext cached
+
+        val fetched = runCatching {
+            activeProvider().getCandles(normalized, range, range.defaultInterval)
+        }.getOrNull()
+
+        // A failed fetch is not an error here: the previous shape is better than a blank
+        // widget, and it still carries the timestamp that says how old it is.
+        if (fetched.isNullOrEmpty()) return@withContext cached
+
+        candleCacheDao.upsert(
+            CachedCandlesEntity(
+                symbol = normalized,
+                chartRange = range.name,
+                seriesJson = json.encodeToString(
+                    ListSerializer(CandleWire.serializer()),
+                    fetched.map { it.toWire() },
+                ),
+                fetchedAtEpochMillis = now.toEpochMilli(),
+            ),
+        )
+        CandleSeries(normalized, range, fetched, now)
     }
 
     override suspend fun resolveSymbol(symbol: String): Quote? = withContext(io) {

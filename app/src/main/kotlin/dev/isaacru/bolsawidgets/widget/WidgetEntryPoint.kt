@@ -5,6 +5,7 @@ import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
+import dev.isaacru.bolsawidgets.domain.repository.QuoteRepository
 import dev.isaacru.bolsawidgets.domain.repository.SettingsRepository
 import dev.isaacru.bolsawidgets.domain.usecase.ObservePortfolioUseCase
 import dev.isaacru.bolsawidgets.domain.usecase.ObserveWatchlistUseCase
@@ -27,6 +28,8 @@ interface WidgetEntryPoint {
     fun observePortfolio(): ObservePortfolioUseCase
 
     fun settingsRepository(): SettingsRepository
+
+    fun quoteRepository(): QuoteRepository
 
     fun refreshMarketData(): RefreshMarketDataUseCase
 

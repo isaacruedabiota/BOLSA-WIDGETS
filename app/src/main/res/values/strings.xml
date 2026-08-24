@@ -119,6 +119,21 @@
     <string name="widget_day">Día</string>
     <string name="widget_total">Total</string>
 
+    <string name="widget_sparkline_label">Valor con gráfico</string>
+    <string name="widget_sparkline_description">Un valor con su precio y un mini-gráfico.</string>
+    <string name="widget_sparkline_unconfigured">Sin valor configurado</string>
+    <string name="widget_sparkline_no_series">Sin gráfico todavía</string>
+    <string name="widget_heatmap_label">Mapa de calor</string>
+    <string name="widget_heatmap_description">Tus posiciones por peso y variación del día.</string>
+
+    <!-- Configuración del widget de sparkline -->
+    <string name="widget_config_title">Configurar widget</string>
+    <string name="widget_config_symbol">Valor</string>
+    <string name="widget_config_no_symbol">Ningún valor elegido todavía.</string>
+    <string name="widget_config_pick">Elegir valor</string>
+    <string name="widget_config_range">Rango del gráfico</string>
+    <string name="widget_config_save">Añadir widget</string>
+
     <!-- Valores ocultos en modo privacidad -->
     <string name="value_hidden">••••</string>
 </resources>
