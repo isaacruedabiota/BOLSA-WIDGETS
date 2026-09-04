@@ -300,6 +300,15 @@ proponían los valores por defecto, así que "Guardar" cambiaba la configuració
 querer. Ahora ambas esperan a leer el estado del widget antes de dibujarse, y el botón
 dice "Guardar" en vez de "Añadir widget", que solo era cierto la primera vez.
 
+**Rediseño del mapa de calor**. Oscuro siempre (ignora el tema del sistema: el mapa es un
+bloque de color y un marco blanco sería lo más brillante de la pantalla), celdas pegadas
+sin hueco ni borde, y una rampa de dos colores: verde si sube, rojo si baja, de un tinte
+casi negro cuando apenas se ha movido a un color saturado en el ±3 % donde satura. El gris
+neutro desapareció; era una tercera cosa que leer en un mapa que se tiene que entender sin
+leer. El bitmap se dibuja sin antialiasing y con los bordes redondeados hacia fuera, porque
+si no, entre celda y celda se cuela una línea de fondo que es justo la rejilla que se
+quería quitar.
+
 ---
 
 ## Criterios de aceptación v1

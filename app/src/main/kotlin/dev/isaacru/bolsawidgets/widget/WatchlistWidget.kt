@@ -37,6 +37,7 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import androidx.compose.ui.unit.dp
+import androidx.glance.unit.ColorProvider
 import dev.isaacru.bolsawidgets.R
 import dev.isaacru.bolsawidgets.domain.model.WatchlistRow
 import dev.isaacru.bolsawidgets.ui.common.Format
@@ -158,9 +159,18 @@ private fun WatchlistRowItem(row: WatchlistRow, zone: ZoneId, compact: Boolean) 
     }
 }
 
-/** Title on the left, manual refresh on the right. Shared by both text widgets. */
+/**
+ * Title on the left, manual refresh on the right. Shared by every widget.
+ *
+ * [tint] exists for the heat map, which paints its own dark ground and so cannot take its
+ * foreground from the system theme like the text widgets do.
+ */
 @Composable
-internal fun WidgetHeader(title: String, trailing: String? = null) {
+internal fun WidgetHeader(
+    title: String,
+    trailing: String? = null,
+    tint: ColorProvider = GlanceTheme.colors.onSurfaceVariant,
+) {
     val context = LocalContext.current
     Row(
         modifier = GlanceModifier.fillMaxWidth().padding(bottom = 4.dp),
@@ -169,7 +179,7 @@ internal fun WidgetHeader(title: String, trailing: String? = null) {
         Text(
             text = title,
             style = TextStyle(
-                color = GlanceTheme.colors.onSurfaceVariant,
+                color = tint,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
             ),
@@ -179,7 +189,7 @@ internal fun WidgetHeader(title: String, trailing: String? = null) {
         if (trailing != null) {
             Text(
                 text = trailing,
-                style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 10.sp),
+                style = TextStyle(color = tint, fontSize = 10.sp),
                 maxLines = 1,
             )
             Spacer(modifier = GlanceModifier.width(6.dp))
@@ -187,7 +197,7 @@ internal fun WidgetHeader(title: String, trailing: String? = null) {
         Image(
             provider = ImageProvider(R.drawable.ic_widget_refresh),
             contentDescription = context.getString(R.string.widget_refresh),
-            colorFilter = ColorFilter.tint(GlanceTheme.colors.onSurfaceVariant),
+            colorFilter = ColorFilter.tint(tint),
             modifier = GlanceModifier
                 .size(18.dp)
                 .clickable(actionRunCallback<RefreshWidgetsAction>()),
@@ -196,7 +206,10 @@ internal fun WidgetHeader(title: String, trailing: String? = null) {
 }
 
 @Composable
-internal fun EmptyMessage(text: String) {
+internal fun EmptyMessage(
+    text: String,
+    tint: ColorProvider = GlanceTheme.colors.onSurfaceVariant,
+) {
     Box(
         modifier = GlanceModifier.fillMaxSize().padding(8.dp),
         contentAlignment = Alignment.Center,
@@ -204,7 +217,7 @@ internal fun EmptyMessage(text: String) {
         Text(
             text = text,
             style = TextStyle(
-                color = GlanceTheme.colors.onSurfaceVariant,
+                color = tint,
                 fontSize = 12.sp,
                 textAlign = TextAlign.Center,
             ),

@@ -20,15 +20,19 @@ import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.background
+import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.ContentScale
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.padding
 import androidx.glance.state.PreferencesGlanceStateDefinition
+import androidx.glance.unit.ColorProvider
 import dev.isaacru.bolsawidgets.R
 import dev.isaacru.bolsawidgets.domain.model.PortfolioSummary
 import dev.isaacru.bolsawidgets.domain.model.WatchlistRow
+import dev.isaacru.bolsawidgets.ui.theme.HeatBackground
+import dev.isaacru.bolsawidgets.ui.theme.HeatOnBackground
 import dev.isaacru.bolsawidgets.widget.render.BitmapBudget
 import dev.isaacru.bolsawidgets.widget.render.HeatmapEntry
 import dev.isaacru.bolsawidgets.widget.render.HeatmapRenderer
@@ -111,42 +115,54 @@ class HeatmapWidgetReceiver : GlanceAppWidgetReceiver() {
 private fun HeatmapContent(entries: List<HeatmapEntry>, source: HeatmapSource) {
     val context = LocalContext.current
     val size = LocalSize.current
+    val tint = ColorProvider(HeatOnBackground)
 
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(GlanceTheme.colors.widgetBackground)
-            .cornerRadius(16.dp)
-            .padding(horizontal = 10.dp, vertical = 8.dp)
+            // The map keeps its own dark ground in both themes: it is a block of colour,
+            // and a white frame around it would be the brightest thing on the screen.
+            .background(ColorProvider(HeatBackground))
+            .cornerRadius(CORNER_DP.dp)
             .clickable(actionStartActivity(openPortfolioIntent(context))),
     ) {
-        WidgetHeader(
-            title = context.getString(
-                when (source) {
-                    HeatmapSource.PORTFOLIO -> R.string.widget_heatmap_label
-                    HeatmapSource.WATCHLIST -> R.string.widget_heatmap_label_watchlist
-                },
-            ),
-        )
+        Box(modifier = GlanceModifier.padding(start = 12.dp, end = 10.dp, top = 8.dp)) {
+            WidgetHeader(
+                title = context.getString(
+                    when (source) {
+                        HeatmapSource.PORTFOLIO -> R.string.widget_heatmap_label
+                        HeatmapSource.WATCHLIST -> R.string.widget_heatmap_label_watchlist
+                    },
+                ),
+                tint = tint,
+            )
+        }
 
         if (entries.isEmpty()) {
             EmptyMessage(
-                context.getString(
+                text = context.getString(
                     when (source) {
                         HeatmapSource.PORTFOLIO -> R.string.widget_empty_portfolio
                         HeatmapSource.WATCHLIST -> R.string.widget_empty_watchlist
                     },
                 ),
+                tint = tint,
             )
             return@Column
         }
 
-        val widthDp = (size.width.value - HORIZONTAL_PADDING_DP).coerceAtLeast(48f)
+        // Full width and hard against the bottom edge: the tiles are the widget, so the
+        // only margin left is the one above them that the header needs.
+        val widthDp = size.width.value.coerceAtLeast(48f)
         val heightDp = (size.height.value - HEADER_DP).coerceAtLeast(48f)
         val density = context.resources.displayMetrics.density
+        val pixels = BitmapBudget.sizeFor(widthDp, heightDp, density)
         val bitmap = HeatmapRenderer.render(
             entries = entries,
-            size = BitmapBudget.sizeFor(widthDp, heightDp, density),
+            size = pixels,
+            // Expressed in the bitmap's own pixels, which stop being screen pixels as
+            // soon as the budget scales the drawing down.
+            cornerRadiusPx = CORNER_DP * pixels.width / widthDp,
         )
 
         Image(
@@ -158,5 +174,5 @@ private fun HeatmapContent(entries: List<HeatmapEntry>, source: HeatmapSource) {
     }
 }
 
-private const val HEADER_DP = 34f
-private const val HORIZONTAL_PADDING_DP = 20f
+private const val HEADER_DP = 32f
+private const val CORNER_DP = 16f
