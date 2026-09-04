@@ -8,6 +8,7 @@ import dev.isaacru.bolsawidgets.domain.csv.PortfolioCsv
 import dev.isaacru.bolsawidgets.domain.model.UserPreferences
 import dev.isaacru.bolsawidgets.domain.provider.ProviderId
 import dev.isaacru.bolsawidgets.domain.repository.BackupRepository
+import dev.isaacru.bolsawidgets.domain.model.ThemeMode
 import dev.isaacru.bolsawidgets.domain.repository.SettingsRepository
 import dev.isaacru.bolsawidgets.ui.common.UiMessage
 import dev.isaacru.bolsawidgets.work.RefreshScheduler
@@ -52,6 +53,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setProvider(providerId: ProviderId) {
         viewModelScope.launch { settingsRepository.setProvider(providerId) }
+    }
+
+    fun setThemeMode(mode: ThemeMode) {
+        viewModelScope.launch { settingsRepository.setThemeMode(mode) }
     }
 
     fun setPrivacyMode(enabled: Boolean) {

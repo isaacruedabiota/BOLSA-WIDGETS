@@ -76,6 +76,11 @@
     <string name="settings_provider_header">Proveedor de datos</string>
     <string name="settings_provider_yahoo_note">Sin clave de API. Cubre BME (.MC), EE. UU. y ETF europeos.</string>
     <string name="settings_provider_twelvedata_note">Todavía no implementado: si lo eliges se seguirá usando Yahoo.</string>
+    <string name="settings_theme_header">Tema</string>
+    <string name="settings_theme_body">Automático sigue al tema del móvil.</string>
+    <string name="settings_theme_system">Automático</string>
+    <string name="settings_theme_light">Claro</string>
+    <string name="settings_theme_dark">Oscuro</string>
     <string name="settings_privacy_header">Privacidad</string>
     <string name="settings_privacy_title">Modo privacidad</string>
     <string name="settings_privacy_body">Oculta los importes en euros en la app y en los widgets. Solo se ven porcentajes.</string>

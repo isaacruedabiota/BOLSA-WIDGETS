@@ -16,6 +16,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -40,6 +41,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.isaacru.bolsawidgets.BuildConfig
 import dev.isaacru.bolsawidgets.R
+import dev.isaacru.bolsawidgets.domain.model.ThemeMode
 import dev.isaacru.bolsawidgets.domain.model.UserPreferences
 import dev.isaacru.bolsawidgets.domain.provider.ProviderId
 import dev.isaacru.bolsawidgets.ui.common.SnackbarMessages
@@ -118,6 +120,27 @@ fun SettingsScreen(
                     selected = preferences.providerId == provider,
                     onClick = { viewModel.setProvider(provider) },
                 )
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+
+            SectionHeader(stringResource(R.string.settings_theme_header))
+            Text(
+                text = stringResource(R.string.settings_theme_body),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                ThemeMode.entries.forEach { mode ->
+                    FilterChip(
+                        selected = preferences.themeMode == mode,
+                        onClick = { viewModel.setThemeMode(mode) },
+                        label = { Text(mode.label()) },
+                    )
+                }
             }
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
@@ -294,3 +317,12 @@ private fun ChoiceRow(
         }
     }
 }
+
+@Composable
+private fun ThemeMode.label(): String = stringResource(
+    when (this) {
+        ThemeMode.SYSTEM -> R.string.settings_theme_system
+        ThemeMode.LIGHT -> R.string.settings_theme_light
+        ThemeMode.DARK -> R.string.settings_theme_dark
+    },
+)

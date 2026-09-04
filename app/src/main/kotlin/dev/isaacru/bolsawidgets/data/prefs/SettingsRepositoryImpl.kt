@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import dev.isaacru.bolsawidgets.domain.model.ThemeMode
 import dev.isaacru.bolsawidgets.domain.model.UserPreferences
 import dev.isaacru.bolsawidgets.domain.provider.ProviderId
 import dev.isaacru.bolsawidgets.domain.repository.SettingsRepository
@@ -44,6 +45,10 @@ class SettingsRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun setThemeMode(mode: ThemeMode) {
+        dataStore.edit { it[KEY_THEME] = mode.name }
+    }
+
     private fun Preferences.toUserPreferences() = UserPreferences(
         providerId = this[KEY_PROVIDER]?.let { stored ->
             ProviderId.entries.firstOrNull { it.name == stored }
@@ -51,11 +56,16 @@ class SettingsRepositoryImpl @Inject constructor(
         privacyMode = this[KEY_PRIVACY] ?: false,
         refreshIntervalMinutes = (this[KEY_REFRESH_MINUTES] ?: UserPreferences.DEFAULT_REFRESH_MINUTES)
             .coerceAtLeast(UserPreferences.MIN_REFRESH_MINUTES),
+        // An unreadable value follows the phone rather than picking a side.
+        themeMode = this[KEY_THEME]?.let { stored ->
+            ThemeMode.entries.firstOrNull { it.name == stored }
+        } ?: ThemeMode.SYSTEM,
     )
 
     private companion object {
         val KEY_PROVIDER = stringPreferencesKey("provider_id")
         val KEY_PRIVACY = booleanPreferencesKey("privacy_mode")
         val KEY_REFRESH_MINUTES = intPreferencesKey("refresh_interval_minutes")
+        val KEY_THEME = stringPreferencesKey("theme_mode")
     }
 }

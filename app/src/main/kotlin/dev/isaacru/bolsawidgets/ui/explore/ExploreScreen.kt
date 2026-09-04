@@ -1,22 +1,24 @@
 package dev.isaacru.bolsawidgets.ui.explore
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -74,83 +76,193 @@ fun ExploreScreen(
             )
         },
     ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = 16.dp,
-                end = 16.dp,
-                top = innerPadding.calculateTopPadding() + 4.dp,
-                bottom = innerPadding.calculateBottomPadding() + 24.dp,
-            ),
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(
+                    top = innerPadding.calculateTopPadding(),
+                    bottom = innerPadding.calculateBottomPadding() + 24.dp,
+                ),
         ) {
-            item {
-                SectionHeader(
-                    title = stringResource(R.string.explore_favorites),
-                    subtitle = stringResource(R.string.explore_favorites_note),
-                )
-            }
+            SectionHeader(
+                title = stringResource(R.string.explore_favorites),
+                subtitle = stringResource(R.string.explore_favorites_note),
+            )
             if (state.favorites.isEmpty()) {
-                item {
-                    Text(
-                        text = stringResource(R.string.explore_favorites_empty),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(vertical = 8.dp),
-                    )
-                }
+                SectionMessage(stringResource(R.string.explore_favorites_empty))
             } else {
-                items(state.favorites, key = { "fav-" + it.symbol }) { row ->
-                    FavoriteRow(
-                        row = row,
+                Carousel(items = state.favorites, key = { "fav-" + it.symbol }) { row ->
+                    InstrumentCard(
+                        symbol = row.symbol,
+                        name = row.displayName,
+                        price = row.quote?.let { Format.price(it.price, it.currency) },
+                        changePercent = row.quote?.changePercent,
                         onClick = { onOpenSymbol(row.symbol) },
-                        onUnstar = { viewModel.toggleFavorite(row.symbol, false) },
+                        onStar = { viewModel.toggleFavorite(row.symbol, false) },
                     )
                 }
             }
 
-            item {
-                SectionHeader(
-                    title = stringResource(R.string.explore_gainers),
-                    subtitle = state.movers.fetchedAt
-                        ?.let {
-                            stringResource(
-                                R.string.explore_movers_note,
-                                Format.dateTime(it, viewModel.zoneId),
-                            )
-                        }
-                        ?: stringResource(R.string.explore_movers_note_empty),
+            SectionHeader(
+                title = stringResource(R.string.explore_gainers),
+                subtitle = state.movers.fetchedAt
+                    ?.let {
+                        stringResource(
+                            R.string.explore_movers_note,
+                            Format.dateTime(it, viewModel.zoneId),
+                        )
+                    }
+                    ?: stringResource(R.string.explore_movers_note_empty),
+            )
+            if (state.movers.gainers.isEmpty() && !state.isLoading) {
+                SectionMessage(
+                    stringResource(
+                        if (state.failed) {
+                            R.string.explore_movers_failed
+                        } else {
+                            R.string.explore_movers_note_empty
+                        },
+                    ),
                 )
-            }
-            items(state.movers.gainers, key = { "up-" + it.symbol }) { mover ->
-                MoverRow(mover = mover, onClick = { onOpenSymbol(mover.symbol) })
+            } else {
+                Carousel(items = state.movers.gainers, key = { "up-" + it.symbol }) { mover ->
+                    MoverCard(mover = mover, onClick = { onOpenSymbol(mover.symbol) })
+                }
             }
 
             if (state.movers.losers.isNotEmpty()) {
-                item { SectionHeader(title = stringResource(R.string.explore_losers)) }
-                items(state.movers.losers, key = { "down-" + it.symbol }) { mover ->
-                    MoverRow(mover = mover, onClick = { onOpenSymbol(mover.symbol) })
+                SectionHeader(title = stringResource(R.string.explore_losers))
+                Carousel(items = state.movers.losers, key = { "down-" + it.symbol }) { mover ->
+                    MoverCard(mover = mover, onClick = { onOpenSymbol(mover.symbol) })
+                }
+            }
+        }
+    }
+}
+
+/**
+ * A row of cards that scrolls sideways.
+ *
+ * Lazy on purpose: fifteen cards of which three are on screen should cost three, and the
+ * ranking is drawn again every time the tab comes back.
+ */
+@Composable
+private fun <T> Carousel(
+    items: List<T>,
+    key: (T) -> Any,
+    card: @Composable (T) -> Unit,
+) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.padding(top = 4.dp, bottom = 4.dp),
+    ) {
+        items(items, key = key) { item -> card(item) }
+    }
+}
+
+@Composable
+private fun SectionMessage(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+    )
+}
+
+@Composable
+private fun MoverCard(mover: MarketMover, onClick: () -> Unit) {
+    InstrumentCard(
+        symbol = mover.symbol,
+        name = mover.name,
+        price = Format.price(mover.price, mover.currency),
+        changePercent = mover.changePercent,
+        onClick = onClick,
+        onStar = null,
+    )
+}
+
+/**
+ * One card of a carousel.
+ *
+ * Fixed width so the cards line up and the next one peeks in from the right, which is what
+ * says "this scrolls" without a scrollbar. Two lines for the name, because "iShares Core
+ * MSCI World UCITS ETF" does not fit in one and cutting it at "iShares" identifies nothing.
+ */
+@Composable
+private fun InstrumentCard(
+    symbol: String,
+    name: String,
+    price: String?,
+    changePercent: Double?,
+    onClick: () -> Unit,
+    onStar: (() -> Unit)?,
+) {
+    ElevatedCard(
+        onClick = onClick,
+        modifier = Modifier.width(CARD_WIDTH.dp),
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                SymbolMonogram(symbol = symbol, size = 36)
+                Spacer(modifier = Modifier.weight(1f))
+                if (onStar != null) {
+                    IconButton(onClick = onStar, modifier = Modifier.size(28.dp)) {
+                        Icon(
+                            imageVector = Icons.Filled.Star,
+                            contentDescription = stringResource(R.string.explore_unstar),
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
                 }
             }
 
-            if (state.movers.isEmpty && !state.isLoading) {
-                item {
-                    Text(
-                        text = stringResource(
-                            if (state.failed) {
-                                R.string.explore_movers_failed
-                            } else {
-                                R.string.explore_movers_note_empty
-                            },
-                        ),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(vertical = 8.dp),
+            Column {
+                Text(
+                    text = symbol,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 2,
+                    minLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+
+            Column {
+                Text(
+                    text = price ?: stringResource(R.string.watchlist_no_price),
+                    style = MaterialTheme.typography.titleSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (changePercent != null) {
+                    ChangeIndicator(
+                        percent = changePercent,
+                        style = MaterialTheme.typography.labelMedium,
                     )
                 }
             }
         }
     }
 }
+
+private const val CARD_WIDTH = 168
 
 @Composable
 private fun SectionHeader(title: String, subtitle: String? = null) {
@@ -170,99 +282,3 @@ private fun SectionHeader(title: String, subtitle: String? = null) {
     }
 }
 
-@Composable
-private fun FavoriteRow(row: WatchlistRow, onClick: () -> Unit, onUnstar: () -> Unit) {
-    val quote = row.quote
-    InstrumentRow(
-        symbol = row.symbol,
-        name = row.displayName,
-        subtitle = row.symbol,
-        price = quote?.let { Format.price(it.price, it.currency) },
-        changePercent = quote?.changePercent,
-        onClick = onClick,
-        trailing = {
-            IconButton(onClick = onUnstar) {
-                Icon(
-                    imageVector = Icons.Filled.Star,
-                    contentDescription = stringResource(R.string.explore_unstar),
-                    tint = MaterialTheme.colorScheme.primary,
-                )
-            }
-        },
-    )
-}
-
-@Composable
-private fun MoverRow(mover: MarketMover, onClick: () -> Unit) {
-    InstrumentRow(
-        symbol = mover.symbol,
-        name = mover.name,
-        subtitle = listOf(mover.symbol, mover.exchange).filter { it.isNotBlank() }.joinToString(" · "),
-        price = Format.price(mover.price, mover.currency),
-        changePercent = mover.changePercent,
-        onClick = onClick,
-        trailing = null,
-    )
-}
-
-/** One line of the tab, whichever section it belongs to. */
-@Composable
-private fun InstrumentRow(
-    symbol: String,
-    name: String,
-    subtitle: String,
-    price: String?,
-    changePercent: Double?,
-    onClick: () -> Unit,
-    trailing: (@Composable () -> Unit)?,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        SymbolMonogram(symbol = symbol)
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = name,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-
-        Column(horizontalAlignment = Alignment.End) {
-            if (price != null) {
-                Text(text = price, style = MaterialTheme.typography.bodyMedium)
-            }
-            if (changePercent != null) {
-                ChangeIndicator(
-                    percent = changePercent,
-                    style = MaterialTheme.typography.labelMedium,
-                )
-            } else {
-                Text(
-                    text = stringResource(R.string.watchlist_no_price),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-
-        if (trailing != null) {
-            Box { trailing() }
-        }
-    }
-}

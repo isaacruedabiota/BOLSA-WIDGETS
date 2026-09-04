@@ -7,11 +7,15 @@ import dev.isaacru.bolsawidgets.domain.provider.ProviderId
  *
  * [privacyMode] hides absolute amounts everywhere (app and widgets), leaving only
  * percentages, so the portfolio value is not readable over your shoulder.
+ *
+ * [themeMode] overrides the system theme. The default follows the phone, which is what an
+ * app should do until told otherwise.
  */
 data class UserPreferences(
     val providerId: ProviderId = ProviderId.YAHOO,
     val privacyMode: Boolean = false,
     val refreshIntervalMinutes: Int = DEFAULT_REFRESH_MINUTES,
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
 ) {
     companion object {
         /** WorkManager will not run a periodic job more often than this. */
@@ -20,4 +24,11 @@ data class UserPreferences(
 
         val REFRESH_OPTIONS = listOf(15, 30, 60, 240)
     }
+}
+
+/** Light, dark, or whatever the phone is doing. */
+enum class ThemeMode {
+    SYSTEM,
+    LIGHT,
+    DARK,
 }

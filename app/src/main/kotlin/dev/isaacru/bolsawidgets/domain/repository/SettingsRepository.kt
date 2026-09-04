@@ -1,5 +1,6 @@
 package dev.isaacru.bolsawidgets.domain.repository
 
+import dev.isaacru.bolsawidgets.domain.model.ThemeMode
 import dev.isaacru.bolsawidgets.domain.model.UserPreferences
 import dev.isaacru.bolsawidgets.domain.provider.ProviderId
 import kotlinx.coroutines.flow.Flow
@@ -16,4 +17,6 @@ interface SettingsRepository {
     suspend fun setPrivacyMode(enabled: Boolean)
 
     suspend fun setRefreshIntervalMinutes(minutes: Int)
+
+    suspend fun setThemeMode(mode: ThemeMode)
 }

@@ -86,6 +86,11 @@ dev.isaacru.bolsawidgets
   `androidx.hilt.navigation.compose` está deprecado.
 - Navegación con rutas type-safe (`@Serializable` en `ui/navigation/Destinations.kt`).
   Los nombres de esas clases se serializan: no renombrarlas a la ligera.
+- El **tema** sale de `UserPreferences.themeMode` (Automático / Claro / Oscuro) y lo aplica
+  `MainActivity`, no el propio `BolsaWidgetsTheme`: ese composable lo usan también las
+  pantallas de configuración de los widgets, y esas no tienen por qué leer preferencias.
+  "Automático" sigue al móvil, que es lo que una app debe hacer mientras no le digan otra
+  cosa.
 - Los mensajes puntuales de las pantallas viajan como `UiMessage` (un tipo, no un String),
   para que los ViewModels no toquen recursos de Android. El castellano vive en strings.xml.
 - ViewModels exponen **`StateFlow<UiState>`**, nunca `LiveData` ni estado mutable público.

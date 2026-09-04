@@ -417,6 +417,23 @@ entrar, **cero**.
 Los favoritos viajan en el CSV (columna `favorito`, al final, y un archivo antiguo se sigue
 restaurando), y la migración de Room 3 → 4 añade la columna y la tabla del ranking.
 
+**Explorar en carruseles, y selector de tema**. Las tres secciones de Explorar pasan de
+filas a **tarjetas que se deslizan de lado**: monograma, ticker, nombre a dos líneas,
+precio y variación, con la estrella dentro de la tarjeta en Favoritos. Ancho fijo para que
+la siguiente tarjeta asome por la derecha, que es lo que dice "esto se desliza" sin
+necesidad de una barra. `LazyRow`, así que quince tarjetas de las que se ven tres cuestan
+tres.
+
+Seguimiento se queda en vertical a propósito: es la pantalla donde se gestiona (menú ⋮,
+subir, bajar, aportación) y en horizontal habría que deslizar hasta el final para llegar al
+último valor.
+
+El **modo oscuro ya existía** —la app siempre ha seguido al tema del sistema, con colores
+dinámicos en Android 12+—; lo que faltaba era poder forzarlo. Ahora hay Automático / Claro
+/ Oscuro en Ajustes, guardado en DataStore. Lo aplica `MainActivity` y no el propio tema,
+porque `BolsaWidgetsTheme` lo usan también las pantallas de configuración de los widgets y
+esas no tienen por qué leer preferencias.
+
 ---
 
 ## Criterios de aceptación v1
