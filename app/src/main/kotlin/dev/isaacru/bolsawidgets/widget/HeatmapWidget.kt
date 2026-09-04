@@ -31,6 +31,7 @@ import androidx.glance.layout.size
 import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.unit.ColorProvider
 import dev.isaacru.bolsawidgets.R
+import dev.isaacru.bolsawidgets.domain.calc.CurrencyConverter
 import dev.isaacru.bolsawidgets.domain.model.PortfolioSummary
 import dev.isaacru.bolsawidgets.domain.model.WatchlistRow
 import dev.isaacru.bolsawidgets.ui.theme.HeatBackground
@@ -41,21 +42,24 @@ import dev.isaacru.bolsawidgets.widget.render.HeatmapEntry
 import dev.isaacru.bolsawidgets.widget.render.HeatmapRenderer
 import kotlinx.coroutines.flow.first
 
-/** What the map is drawn from. Area only means something in [PORTFOLIO]. */
+/** What the map is drawn from. Either way the area of a tile is what it is worth. */
 enum class HeatmapSource {
-    /** Positions, tile area proportional to weight in the portfolio. */
+    /** Positions, tile area proportional to what the holding is worth in euros. */
     PORTFOLIO,
 
-    /** Followed symbols, every tile the same size because there is no weight. */
+    /**
+     * Followed symbols, tile area proportional to the price of one share in euros, which
+     * is the only value a symbol you do not hold has.
+     */
     WATCHLIST,
 }
 
 /**
- * Finviz-style heat map: colour by the day's move, area by weight in the portfolio.
+ * Finviz-style heat map: colour by the day's move, area by value.
  *
- * The source is per-instance state chosen when the widget is placed, because the two
- * modes cannot be mixed: as soon as equal-sized watchlist tiles sit next to weighted
- * position tiles, the area of a tile stops meaning anything.
+ * The source is per-instance state chosen when the widget is placed, because the two modes
+ * measure different things. What a holding is worth and what one share costs are not the
+ * same quantity, so putting both on one map would make the area meaningless.
  *
  * Drawn to a bitmap because RemoteViews has no Canvas of its own, and sized from the real
  * widget size so it stays sharp when resized.
@@ -76,7 +80,12 @@ class HeatmapWidget : GlanceAppWidget() {
         val entryPoint = WidgetEntryPoint.from(context)
         val entries = when (source) {
             HeatmapSource.PORTFOLIO -> entryPoint.observePortfolio().invoke().first().toEntries()
-            HeatmapSource.WATCHLIST -> entryPoint.observeWatchlist().invoke().first().toEntries()
+            HeatmapSource.WATCHLIST -> {
+                // Prices come in whatever currency each market quotes in, so the map needs
+                // the FX snapshot to put them all on one scale before comparing areas.
+                val converter = entryPoint.quoteRepository().observeConverter().first()
+                entryPoint.observeWatchlist().invoke().first().toEntries(converter)
+            }
         }
 
         provideContent {
@@ -103,11 +112,20 @@ private fun PortfolioSummary.toEntries(): List<HeatmapEntry> = positions
         )
     }
 
-private fun List<WatchlistRow>.toEntries(): List<HeatmapEntry> = mapNotNull { row ->
+private fun List<WatchlistRow>.toEntries(
+    converter: CurrencyConverter,
+): List<HeatmapEntry> = mapNotNull { row ->
     // A symbol with no quote has no colour to show, so it is left out rather than drawn
     // grey and read as "flat today".
     val quote = row.quote ?: return@mapNotNull null
-    HeatmapEntry(symbol = row.symbol, weight = 1.0, changePercent = quote.changePercent)
+    val normalized = CurrencyConverter.normalizeCurrency(quote.currency)
+    val priceEur = converter.toEur(quote.price, quote.currency)
+        // No rate cached for that currency yet. A tile sized in its own currency is off by
+        // the exchange rate; leaving the symbol out of the map would be worse. The minor
+        // unit is already folded in, which is the error that would actually matter: being
+        // wrong by 100x reorders the map, being wrong by 10% does not.
+        ?: (quote.price * normalized.minorUnitFactor)
+    HeatmapEntry(symbol = row.symbol, weight = priceEur, changePercent = quote.changePercent)
 }
 
 class HeatmapWidgetReceiver : GlanceAppWidgetReceiver() {

@@ -160,9 +160,9 @@
     <string name="widget_heatmap_label_watchlist">Mapa de calor · seguimiento</string>
     <string name="heatmap_config_header">Qué muestra el mapa</string>
     <string name="heatmap_source_portfolio">Tu cartera</string>
-    <string name="heatmap_source_portfolio_note">El tamaño de cada celda es su peso en la cartera. Necesita posiciones con cantidad.</string>
+    <string name="heatmap_source_portfolio_note">El tamaño de cada celda es lo que vale tu posición. Necesita posiciones con cantidad.</string>
     <string name="heatmap_source_watchlist">Tu lista de seguimiento</string>
-    <string name="heatmap_source_watchlist_note">Todas las celdas del mismo tamaño: solo importa el color. No hace falta tener los valores.</string>
+    <string name="heatmap_source_watchlist_note">El tamaño de cada celda es el precio de un título, en euros. No hace falta tener los valores.</string>
     <string name="widget_heatmap_description">Tus posiciones por peso y variación del día.</string>
 
     <!-- Configuración del widget de sparkline -->

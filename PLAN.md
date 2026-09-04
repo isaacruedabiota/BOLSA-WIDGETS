@@ -315,6 +315,12 @@ celdas dicen lo que es—. El refresco manual no se pierde: flota sobre la esqui
 en blanco translúcido, que es lo único que se ve igual de bien sobre una celda encendida
 que sobre una apagada.
 
+Y el área pasó a medir valor también en el modo seguimiento: la celda de cada símbolo es el
+precio de un título convertido a euros con el snapshot de FX, porque un valor que no tienes
+no tiene más "cuánto vale" que eso. Efecto secundario asumido: con un ETF de 127 € al lado
+de una acción de 3,68 €, la pequeña se queda en un 2 % del área y pierde la etiqueta. Es lo
+que pasa cuando el área es honesta; la alternativa sería mentir sobre el tamaño.
+
 ---
 
 ## Criterios de aceptación v1
