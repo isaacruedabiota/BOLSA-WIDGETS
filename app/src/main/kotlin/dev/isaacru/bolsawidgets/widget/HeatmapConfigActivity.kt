@@ -156,6 +156,12 @@ private fun HeatmapConfigScreen(
                 selected = source == HeatmapSource.WATCHLIST,
                 onClick = { source = HeatmapSource.WATCHLIST },
             )
+            SourceRow(
+                title = stringResource(R.string.heatmap_source_plan),
+                subtitle = stringResource(R.string.heatmap_source_plan_note),
+                selected = source == HeatmapSource.PLAN,
+                onClick = { source = HeatmapSource.PLAN },
+            )
 
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),

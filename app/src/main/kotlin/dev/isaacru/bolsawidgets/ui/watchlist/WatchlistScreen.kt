@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -19,19 +20,24 @@ import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -42,11 +48,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.isaacru.bolsawidgets.R
+import dev.isaacru.bolsawidgets.domain.model.Contribution
+import dev.isaacru.bolsawidgets.domain.model.ContributionPeriod
 import dev.isaacru.bolsawidgets.domain.model.WatchlistRow
 import dev.isaacru.bolsawidgets.ui.common.ChangeIndicator
 import dev.isaacru.bolsawidgets.ui.common.Format
@@ -64,6 +73,7 @@ fun WatchlistScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var showSearch by remember { mutableStateOf(false) }
+    var editingContribution by remember { mutableStateOf<WatchlistRow?>(null) }
 
     SnackbarMessages(viewModel.messages, snackbarHostState)
 
@@ -113,10 +123,22 @@ fun WatchlistScreen(
                         onMoveUp = { viewModel.moveUp(row.symbol) },
                         onMoveDown = { viewModel.moveDown(row.symbol) },
                         onRemove = { viewModel.remove(row.symbol) },
+                        onEditContribution = { editingContribution = row },
                     )
                 }
             }
         }
+    }
+
+    editingContribution?.let { row ->
+        ContributionDialog(
+            row = row,
+            onDismiss = { editingContribution = null },
+            onSave = { contribution ->
+                viewModel.setContribution(row.symbol, contribution)
+                editingContribution = null
+            },
+        )
     }
 
     if (showSearch) {
@@ -138,6 +160,7 @@ private fun WatchlistCard(
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onRemove: () -> Unit,
+    onEditContribution: () -> Unit,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     val quote = row.quote
@@ -163,6 +186,13 @@ private fun WatchlistCard(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
+                row.item.contribution?.let { contribution ->
+                    Text(
+                        text = contributionLabel(contribution),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
 
             Column(horizontalAlignment = Alignment.End) {
@@ -194,6 +224,14 @@ private fun WatchlistCard(
                     Icon(Icons.Filled.MoreVert, stringResource(R.string.action_more))
                 }
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.action_contribution)) },
+                        leadingIcon = { Icon(Icons.Filled.Savings, contentDescription = null) },
+                        onClick = {
+                            menuOpen = false
+                            onEditContribution()
+                        },
+                    )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.action_move_up)) },
                         leadingIcon = { Icon(Icons.Filled.ArrowUpward, contentDescription = null) },
@@ -243,3 +281,102 @@ private fun EmptyWatchlist(modifier: Modifier = Modifier) {
         }
     }
 }
+
+/**
+ * Where the user says how much money goes into a value, and how often.
+ *
+ * The cadence is stored as typed instead of being normalised away, because "50 a la
+ * semana" is how the user thinks about it; turning it into 216,67 al mes would be right
+ * and unrecognisable. The map does that conversion later, where it needs one scale.
+ */
+@Composable
+private fun ContributionDialog(
+    row: WatchlistRow,
+    onDismiss: () -> Unit,
+    onSave: (Contribution?) -> Unit,
+) {
+    val current = row.item.contribution
+    var amountText by remember(row.symbol) {
+        mutableStateOf(current?.let { Format.editable(it.amountEur, 2) }.orEmpty())
+    }
+    var period by remember(row.symbol) {
+        mutableStateOf(current?.period ?: ContributionPeriod.MONTHLY)
+    }
+    val contribution = Contribution.of(amountText.toDecimalOrNull(), period)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.contribution_title, row.symbol)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = stringResource(R.string.contribution_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                OutlinedTextField(
+                    value = amountText,
+                    onValueChange = { amountText = it },
+                    label = { Text(stringResource(R.string.contribution_amount)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ContributionPeriod.entries.forEach { option ->
+                        FilterChip(
+                            selected = period == option,
+                            onClick = { period = option },
+                            label = { Text(stringResource(periodLabel(option))) },
+                        )
+                    }
+                }
+                if (contribution != null && contribution.period == ContributionPeriod.WEEKLY) {
+                    // Weekly amounts are compared as monthly ones, so the figure the map
+                    // will actually use is shown here rather than left as a surprise.
+                    Text(
+                        text = stringResource(
+                            R.string.contribution_monthly_equivalent,
+                            Format.money(contribution.monthlyEur),
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onSave(contribution) },
+                enabled = contribution != null,
+            ) { Text(stringResource(R.string.action_save)) }
+        },
+        dismissButton = {
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                if (current != null) {
+                    TextButton(onClick = { onSave(null) }) {
+                        Text(stringResource(R.string.contribution_clear))
+                    }
+                }
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+            }
+        },
+    )
+}
+
+@Composable
+private fun contributionLabel(contribution: Contribution): String = stringResource(
+    when (contribution.period) {
+        ContributionPeriod.WEEKLY -> R.string.contribution_weekly_value
+        ContributionPeriod.MONTHLY -> R.string.contribution_monthly_value
+    },
+    Format.money(contribution.amountEur),
+)
+
+private fun periodLabel(period: ContributionPeriod): Int = when (period) {
+    ContributionPeriod.WEEKLY -> R.string.contribution_period_weekly
+    ContributionPeriod.MONTHLY -> R.string.contribution_period_monthly
+}
+
+/** Accepts either decimal separator, like every other amount field in the app. */
+private fun String.toDecimalOrNull(): Double? = trim().replace(',', '.').toDoubleOrNull()

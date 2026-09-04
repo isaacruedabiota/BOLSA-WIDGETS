@@ -138,6 +138,18 @@
     <string name="backup_import_done">Importado: %1$s y %2$s</string>
     <string name="action_replace">Reemplazar</string>
 
+    <!-- Aportaciones recurrentes: el plan de inversión, valor a valor -->
+    <string name="action_contribution">Aportación</string>
+    <string name="contribution_title">Aportación en %1$s</string>
+    <string name="contribution_body">Cuánto dinero metes en este valor cada semana o cada mes. Es lo que decide el tamaño de su celda en el mapa de calor.</string>
+    <string name="contribution_amount">Importe (€)</string>
+    <string name="contribution_period_weekly">Semanal</string>
+    <string name="contribution_period_monthly">Mensual</string>
+    <string name="contribution_weekly_value">%1$s / semana</string>
+    <string name="contribution_monthly_value">%1$s / mes</string>
+    <string name="contribution_monthly_equivalent">Equivale a %1$s al mes</string>
+    <string name="contribution_clear">Quitar</string>
+
     <!-- Widgets -->
     <string name="widget_watchlist_label">Seguimiento</string>
     <string name="widget_watchlist_description">Tus valores seguidos con la variación del día.</string>
@@ -157,6 +169,10 @@
     <string name="widget_sparkline_unconfigured">Sin valor configurado</string>
     <string name="widget_sparkline_no_series">Sin gráfico todavía</string>
     <string name="widget_heatmap_label">Mapa de calor</string>
+    <string name="widget_heatmap_label_plan">Mapa de calor · aportaciones</string>
+    <string name="widget_empty_plan">Pon tus aportaciones desde la app</string>
+    <string name="heatmap_source_plan">Tu plan de aportaciones</string>
+    <string name="heatmap_source_plan_note">El tamaño de cada celda es lo que metes al mes en ese valor. Solo salen los valores con aportación.</string>
     <string name="widget_heatmap_label_watchlist">Mapa de calor · seguimiento</string>
     <string name="heatmap_config_header">Qué muestra el mapa</string>
     <string name="heatmap_source_portfolio">Tu cartera</string>

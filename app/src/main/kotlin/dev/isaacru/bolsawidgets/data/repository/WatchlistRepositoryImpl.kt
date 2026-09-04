@@ -5,6 +5,7 @@ import dev.isaacru.bolsawidgets.data.local.entity.WatchlistItemEntity
 import dev.isaacru.bolsawidgets.data.local.toDomain
 import dev.isaacru.bolsawidgets.data.local.toEntity
 import dev.isaacru.bolsawidgets.di.IoDispatcher
+import dev.isaacru.bolsawidgets.domain.model.Contribution
 import dev.isaacru.bolsawidgets.domain.model.WatchlistItem
 import dev.isaacru.bolsawidgets.domain.repository.WatchlistRepository
 import kotlinx.coroutines.CoroutineDispatcher
@@ -43,6 +44,19 @@ class WatchlistRepositoryImpl @Inject constructor(
 
     override suspend fun remove(symbol: String) = withContext(io) {
         watchlistDao.deleteBySymbol(symbol.trim().uppercase())
+    }
+
+    override suspend fun setContribution(
+        symbol: String,
+        contribution: Contribution?,
+    ) = withContext(io) {
+        val existing = watchlistDao.getBySymbol(symbol.trim().uppercase()) ?: return@withContext
+        watchlistDao.upsert(
+            existing.copy(
+                contributionAmount = contribution?.amountEur,
+                contributionPeriod = contribution?.period?.name,
+            ),
+        )
     }
 
     override suspend fun reorder(symbolsInOrder: List<String>) = withContext(io) {

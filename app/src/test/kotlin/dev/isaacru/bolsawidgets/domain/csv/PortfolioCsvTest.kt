@@ -1,8 +1,11 @@
 package dev.isaacru.bolsawidgets.domain.csv
 
+import dev.isaacru.bolsawidgets.domain.model.Contribution
+import dev.isaacru.bolsawidgets.domain.model.ContributionPeriod
 import dev.isaacru.bolsawidgets.domain.model.Position
 import dev.isaacru.bolsawidgets.domain.model.WatchlistItem
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.LocalDate
@@ -40,7 +43,12 @@ class PortfolioCsvTest {
         ),
         watchlist = listOf(
             WatchlistItem("ITX.MC", "Inditex", 0),
-            WatchlistItem("IWDA.AS", "iShares Core MSCI World", 1),
+            WatchlistItem(
+                symbol = "IWDA.AS",
+                name = "iShares Core MSCI World",
+                sortOrder = 1,
+                contribution = Contribution(200.0, ContributionPeriod.MONTHLY),
+            ),
         ),
     )
 
@@ -182,5 +190,52 @@ class PortfolioCsvTest {
 
         assertEquals(1, restored.backup.watchlist.size)
         assertTrue(restored.skippedRows.isEmpty())
+    }
+
+    @Test
+    fun `a contribution survives the round trip, cadence included`() {
+        val weekly = CsvBackup(
+            positions = emptyList(),
+            watchlist = listOf(
+                WatchlistItem(
+                    symbol = "SAN.MC",
+                    name = "Santander",
+                    sortOrder = 0,
+                    contribution = Contribution(50.0, ContributionPeriod.WEEKLY),
+                ),
+            ),
+        )
+
+        val restored = PortfolioCsv.parse(PortfolioCsv.export(weekly))
+
+        assertEquals(weekly.watchlist, restored.backup.watchlist)
+    }
+
+    @Test
+    fun `a file written before contributions existed still restores`() {
+        // Ten columns, no contribution ones. Losing a whole backup because it predates a
+        // feature would be the worst possible way to fail.
+        val old = """
+            tipo,simbolo,nombre,mercado,cantidad,precio_medio,divisa,fecha_compra,notas,orden
+            seguimiento,ITX.MC,Inditex,,,,,,,0
+        """.trimIndent()
+
+        val restored = PortfolioCsv.parse(old)
+
+        assertTrue(restored.skippedRows.isEmpty())
+        assertEquals(listOf(WatchlistItem("ITX.MC", "Inditex", 0)), restored.backup.watchlist)
+        assertNull(restored.backup.watchlist.single().contribution)
+    }
+
+    @Test
+    fun `an unreadable cadence is dropped rather than guessed`() {
+        val broken = """
+            tipo,simbolo,nombre,mercado,cantidad,precio_medio,divisa,fecha_compra,notas,orden,aportacion,periodo_aportacion
+            seguimiento,ITX.MC,Inditex,,,,,,,0,200,trimestral
+        """.trimIndent()
+
+        val item = PortfolioCsv.parse(broken).backup.watchlist.single()
+
+        assertNull(item.contribution)
     }
 }

@@ -3,6 +3,7 @@ package dev.isaacru.bolsawidgets.ui.watchlist
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.isaacru.bolsawidgets.domain.model.Contribution
 import dev.isaacru.bolsawidgets.domain.model.Quote
 import dev.isaacru.bolsawidgets.domain.model.WatchlistRow
 import dev.isaacru.bolsawidgets.domain.repository.WatchlistRepository
@@ -66,6 +67,13 @@ class WatchlistViewModel @Inject constructor(
         viewModelScope.launch {
             watchlistRepository.remove(symbol)
             messageChannel.send(UiMessage.SymbolRemoved(symbol))
+        }
+    }
+
+    /** Saves what the user puts into [symbol] every week or month, or clears it. */
+    fun setContribution(symbol: String, contribution: Contribution?) {
+        viewModelScope.launch {
+            watchlistRepository.setContribution(symbol, contribution)
         }
     }
 

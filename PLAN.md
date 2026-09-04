@@ -321,6 +321,25 @@ no tiene más "cuánto vale" que eso. Efecto secundario asumido: con un ETF de 1
 de una acción de 3,68 €, la pequeña se queda en un 2 % del área y pierde la etiqueta. Es lo
 que pasa cuando el área es honesta; la alternativa sería mentir sobre el tamaño.
 
+**Plan de aportaciones**. Cada valor del seguimiento puede llevar cuánto dinero se mete en
+él y cada cuánto (semanal o mensual), desde su propio menú. El mapa de calor gana un tercer
+origen, "Tu plan de aportaciones", donde el área de cada celda es esa aportación llevada a
+mes y solo salen los valores que tienen una.
+
+Decisiones que se tomaron por el camino:
+
+- **Un tercer origen y no cambiar el de seguimiento**, porque el área ya significaba otra
+  cosa allí (el precio de un título) y mezclar dos medidas en un mapa deja el área sin
+  significado. Es la misma regla que separó cartera de seguimiento.
+- **La cadencia se guarda tal cual**, y solo se normaliza a mes para comparar. "50 a la
+  semana" es como el usuario lo piensa; convertirlo a 216,67 al mes al guardarlo sería
+  correcto e irreconocible. El diálogo enseña la equivalencia mensual en cuanto eliges
+  semanal, para que el tamaño de la celda no sea una sorpresa.
+- **La aportación no es una posición**: no tiene cantidad, ni precio de compra, ni P&L. Es
+  un flujo, y por eso vive en el símbolo del seguimiento y no en la cartera.
+- Migración real de Room (2 → 3, dos columnas nullable) y dos columnas nuevas al final del
+  CSV. Un archivo exportado antes de esto se sigue restaurando: lo que falta es "sin plan".
+
 ---
 
 ## Criterios de aceptación v1

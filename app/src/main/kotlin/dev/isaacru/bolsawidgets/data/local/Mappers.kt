@@ -4,6 +4,8 @@ import dev.isaacru.bolsawidgets.data.local.entity.CachedQuoteEntity
 import dev.isaacru.bolsawidgets.data.local.entity.FxRateEntity
 import dev.isaacru.bolsawidgets.data.local.entity.PositionEntity
 import dev.isaacru.bolsawidgets.data.local.entity.WatchlistItemEntity
+import dev.isaacru.bolsawidgets.domain.model.Contribution
+import dev.isaacru.bolsawidgets.domain.model.ContributionPeriod
 import dev.isaacru.bolsawidgets.domain.model.FxRate
 import dev.isaacru.bolsawidgets.domain.model.Position
 import dev.isaacru.bolsawidgets.domain.model.Quote
@@ -39,12 +41,20 @@ fun WatchlistItemEntity.toDomain() = WatchlistItem(
     symbol = symbol,
     name = name,
     sortOrder = sortOrder,
+    // Anything the column cannot be read as a plan is no plan: a row half written by an
+    // older version must not turn into a contribution of an unknown cadence.
+    contribution = Contribution.of(
+        amountEur = contributionAmount,
+        period = ContributionPeriod.entries.firstOrNull { it.name == contributionPeriod },
+    ),
 )
 
 fun WatchlistItem.toEntity() = WatchlistItemEntity(
     symbol = symbol.uppercase(),
     name = name,
     sortOrder = sortOrder,
+    contributionAmount = contribution?.amountEur,
+    contributionPeriod = contribution?.period?.name,
 )
 
 /**

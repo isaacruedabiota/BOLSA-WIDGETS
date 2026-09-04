@@ -1,5 +1,7 @@
 package dev.isaacru.bolsawidgets.domain.csv
 
+import dev.isaacru.bolsawidgets.domain.model.Contribution
+import dev.isaacru.bolsawidgets.domain.model.ContributionPeriod
 import dev.isaacru.bolsawidgets.domain.model.Position
 import dev.isaacru.bolsawidgets.domain.model.WatchlistItem
 import java.time.LocalDate
@@ -50,6 +52,8 @@ object PortfolioCsv {
         "fecha_compra",
         "notas",
         "orden",
+        "aportacion",
+        "periodo_aportacion",
     )
 
     fun export(backup: CsvBackup): String = buildString {
@@ -67,6 +71,8 @@ object PortfolioCsv {
                     position.purchaseDate.toString(),
                     position.notes,
                     "",
+                    "",
+                    "",
                 ),
             )
         }
@@ -83,6 +89,8 @@ object PortfolioCsv {
                     "",
                     "",
                     item.sortOrder.toString(),
+                    item.contribution?.let { decimal(it.amountEur) }.orEmpty(),
+                    item.contribution?.period?.name?.lowercase().orEmpty(),
                 ),
             )
         }
@@ -144,7 +152,19 @@ object PortfolioCsv {
             symbol = symbol,
             name = fields.getOrNull(2)?.trim().orEmpty().ifEmpty { symbol },
             sortOrder = fields.getOrNull(9)?.trim()?.toIntOrNull() ?: fallbackOrder,
+            // Absent in files written before contributions existed, and a restore has to
+            // work with those: missing columns simply mean no plan.
+            contribution = Contribution.of(
+                amountEur = fields.getOrNull(10).toDecimalOrNull(),
+                period = parsePeriod(fields.getOrNull(11)),
+            ),
         )
+    }
+
+    private fun parsePeriod(raw: String?): ContributionPeriod? {
+        val text = raw?.trim().orEmpty()
+        if (text.isEmpty()) return null
+        return ContributionPeriod.entries.firstOrNull { it.name.equals(text, ignoreCase = true) }
     }
 
     private fun row(vararg values: String): String = values.joinToString(",") { escape(it) }

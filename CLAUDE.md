@@ -107,6 +107,12 @@ dev.isaacru.bolsawidgets
   es fraccionaria y cambia cada mes. Por eso "repetir compra" (`RepeatPurchase`) pide
   importe y precio y **deriva** la cantidad; lo que se arrastra del mes anterior es el
   importe, que es lo único que se repite.
+- La **aportación** (`Contribution`) de un símbolo del seguimiento es un flujo, no una
+  posición: importe en euros más cadencia (semanal o mensual), sin cantidad ni P&L. Se
+  guarda tal y como el usuario la escribe —"50 a la semana" es como él lo piensa— y se
+  compara siempre en `monthlyEur`. Un mes son **52/12 semanas**, no cuatro: llamarlo cuatro
+  se queda corto un 8 % y eso basta para reordenar el mapa. Un `null` es "sin plan", nunca
+  "cero euros".
 - `Format.editable` existe aparte de `Format.plain` porque un número que va a un campo de
   texto **no puede llevar separador de miles**: en castellano es un punto, y al normalizar
   la coma decimal "2.450,00" deja de ser parseable.
@@ -169,8 +175,15 @@ Yahoo Finance son endpoints públicos no documentados. Se asume que fallan.
   separadas del dibujo, para que se puedan testear sin Android.
 - Al medir texto para una celda, **encogerlo hasta que quepa**, nunca omitirlo: dos tickers
   de la misma longitud no miden lo mismo y un umbral de todo o nada deja celdas mudas.
-- El estado por instancia de widget (símbolo y rango del sparkline) vive en
-  `PreferencesGlanceStateDefinition`, y lo escribe la activity de configuración.
+- El estado por instancia de widget (símbolo y rango del sparkline, origen del mapa de
+  calor) vive en `PreferencesGlanceStateDefinition`, y lo escribe la activity de
+  configuración, que **lee el estado actual antes de dibujarse**: el lanzador la reabre
+  para reconfigurar un widget ya colocado y arrancar en los valores por defecto cambiaría
+  la configuración sin querer.
+- El **área de una celda del mapa de calor es siempre dinero**, pero cuál depende del
+  origen elegido: valor de la posición (cartera), precio de un título (seguimiento) o
+  aportación mensual (plan). Los tres **no se mezclan nunca** en un mismo mapa; en cuanto
+  conviven dos de esas medidas, el área deja de significar nada.
 - Cada widget lleva su propio botón de refresco manual, que **ignora el horario de mercado**
   igual que el de la app.
 - Glance instancia los `GlanceAppWidget` el framework, no Hilt: las dependencias se obtienen
@@ -219,6 +232,9 @@ Yahoo Finance son endpoints públicos no documentados. Se asume que fallan.
 
 - **Un solo archivo** con cartera y seguimiento, distinguidos por la primera columna
   (`posicion` / `seguimiento`). Cabecera en español; es un archivo que el usuario abre.
+- Las columnas **solo se añaden al final** y el parser lee por índice con `getOrNull`, así
+  que un archivo escrito antes de que existiera una columna (p. ej. `aportacion`) se
+  restaura igual: lo que falta es "sin dato", nunca un error.
 - Decimales **siempre con punto** al escribir —la coma es el separador de campos— y se
   aceptan ambos al leer, porque las hojas de cálculo españolas reescriben con comas.
 - Los saltos de línea se aplanan a espacios al exportar: un registro es una línea, y así

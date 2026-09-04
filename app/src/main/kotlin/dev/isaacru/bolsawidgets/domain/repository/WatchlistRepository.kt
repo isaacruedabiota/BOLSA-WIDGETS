@@ -1,5 +1,6 @@
 package dev.isaacru.bolsawidgets.domain.repository
 
+import dev.isaacru.bolsawidgets.domain.model.Contribution
 import dev.isaacru.bolsawidgets.domain.model.WatchlistItem
 import kotlinx.coroutines.flow.Flow
 
@@ -14,6 +15,12 @@ interface WatchlistRepository {
     suspend fun add(symbol: String, name: String)
 
     suspend fun remove(symbol: String)
+
+    /**
+     * Sets what the user puts into [symbol] every week or month, or clears it with null.
+     * A symbol that is not on the list is left alone.
+     */
+    suspend fun setContribution(symbol: String, contribution: Contribution?)
 
     /** Persists [symbolsInOrder] as the new ordering. */
     suspend fun reorder(symbolsInOrder: List<String>)

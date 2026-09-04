@@ -23,7 +23,7 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): BolsaDatabase =
         Room.databaseBuilder(context, BolsaDatabase::class.java, BolsaDatabase.NAME)
-            .addMigrations(BolsaDatabase.MIGRATION_1_2)
+            .addMigrations(BolsaDatabase.MIGRATION_1_2, BolsaDatabase.MIGRATION_2_3)
             .build()
 
     @Provides

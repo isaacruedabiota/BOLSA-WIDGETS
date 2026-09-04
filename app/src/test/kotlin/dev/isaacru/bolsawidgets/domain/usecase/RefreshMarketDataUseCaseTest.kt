@@ -5,6 +5,7 @@ import dev.isaacru.bolsawidgets.domain.market.MarketClock
 import dev.isaacru.bolsawidgets.domain.model.Candle
 import dev.isaacru.bolsawidgets.domain.model.CandleInterval
 import dev.isaacru.bolsawidgets.domain.model.ChartRange
+import dev.isaacru.bolsawidgets.domain.model.Contribution
 import dev.isaacru.bolsawidgets.domain.model.Position
 import dev.isaacru.bolsawidgets.domain.model.Quote
 import dev.isaacru.bolsawidgets.domain.model.WatchlistItem
@@ -169,6 +170,7 @@ class RefreshMarketDataUseCaseTest {
         override fun observeItems(): Flow<List<WatchlistItem>> = flowOf(items)
         override suspend fun add(symbol: String, name: String) = Unit
         override suspend fun remove(symbol: String) = Unit
+        override suspend fun setContribution(symbol: String, contribution: Contribution?) = Unit
         override suspend fun reorder(symbolsInOrder: List<String>) = Unit
         override suspend fun replaceAll(items: List<WatchlistItem>) = Unit
     }

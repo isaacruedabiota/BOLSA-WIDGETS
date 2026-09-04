@@ -23,7 +23,7 @@ import dev.isaacru.bolsawidgets.data.local.entity.WatchlistItemEntity
         FxRateEntity::class,
         CachedCandlesEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 abstract class BolsaDatabase : RoomDatabase() {
@@ -57,6 +57,20 @@ abstract class BolsaDatabase : RoomDatabase() {
                         "`fetchedAtEpochMillis` INTEGER NOT NULL, " +
                         "PRIMARY KEY(`symbol`, `chartRange`))",
                 )
+            }
+        }
+
+        /**
+         * Adds the recurring contribution to a followed symbol.
+         *
+         * Two nullable columns rather than a new table: a contribution has no life of its
+         * own, it is an attribute of the symbol and disappears with it. Both are added
+         * with no default, so every existing row means "no plan" rather than "zero".
+         */
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `watchlist` ADD COLUMN `contributionAmount` REAL")
+                db.execSQL("ALTER TABLE `watchlist` ADD COLUMN `contributionPeriod` TEXT")
             }
         }
     }

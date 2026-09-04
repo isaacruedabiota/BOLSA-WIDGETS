@@ -26,6 +26,10 @@ data class WatchlistItemEntity(
     @PrimaryKey val symbol: String,
     val name: String,
     val sortOrder: Int,
+    /** Recurring amount in euros, null when the user has not planned one. */
+    val contributionAmount: Double? = null,
+    /** Name of a ContributionPeriod, kept as text so an unknown value degrades to null. */
+    val contributionPeriod: String? = null,
 )
 
 /**

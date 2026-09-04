@@ -42,7 +42,7 @@ import dev.isaacru.bolsawidgets.widget.render.HeatmapEntry
 import dev.isaacru.bolsawidgets.widget.render.HeatmapRenderer
 import kotlinx.coroutines.flow.first
 
-/** What the map is drawn from. Either way the area of a tile is what it is worth. */
+/** What the map is drawn from. Whichever it is, the area of a tile is an amount of money. */
 enum class HeatmapSource {
     /** Positions, tile area proportional to what the holding is worth in euros. */
     PORTFOLIO,
@@ -52,14 +52,22 @@ enum class HeatmapSource {
      * is the only value a symbol you do not hold has.
      */
     WATCHLIST,
+
+    /**
+     * The savings plan: tile area proportional to what goes into each value every month.
+     * Only symbols with a contribution are on it, because the map is about where the money
+     * goes and a symbol you only watch takes none of it.
+     */
+    PLAN,
 }
 
 /**
  * Finviz-style heat map: colour by the day's move, area by value.
  *
- * The source is per-instance state chosen when the widget is placed, because the two modes
- * measure different things. What a holding is worth and what one share costs are not the
- * same quantity, so putting both on one map would make the area meaningless.
+ * The source is per-instance state chosen when the widget is placed, because the three
+ * modes measure different things. What a holding is worth, what one share costs and what
+ * you put in every month are three different quantities, and a map that mixed them would
+ * have an area that means nothing.
  *
  * Drawn to a bitmap because RemoteViews has no Canvas of its own, and sized from the real
  * widget size so it stays sharp when resized.
@@ -86,6 +94,9 @@ class HeatmapWidget : GlanceAppWidget() {
                 val converter = entryPoint.quoteRepository().observeConverter().first()
                 entryPoint.observeWatchlist().invoke().first().toEntries(converter)
             }
+
+            HeatmapSource.PLAN ->
+                entryPoint.observeWatchlist().invoke().first().toPlanEntries()
         }
 
         provideContent {
@@ -128,6 +139,14 @@ private fun List<WatchlistRow>.toEntries(
     HeatmapEntry(symbol = row.symbol, weight = priceEur, changePercent = quote.changePercent)
 }
 
+private fun List<WatchlistRow>.toPlanEntries(): List<HeatmapEntry> = mapNotNull { row ->
+    // Contributions are already in euros, and monthly is the common scale: a weekly 50
+    // and a monthly 200 have to be comparable before their tiles can be.
+    val monthly = row.item.contribution?.monthlyEur ?: return@mapNotNull null
+    val quote = row.quote ?: return@mapNotNull null
+    HeatmapEntry(symbol = row.symbol, weight = monthly, changePercent = quote.changePercent)
+}
+
 class HeatmapWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = HeatmapWidget()
 }
@@ -141,6 +160,7 @@ private fun HeatmapContent(entries: List<HeatmapEntry>, source: HeatmapSource) {
         when (source) {
             HeatmapSource.PORTFOLIO -> R.string.widget_heatmap_label
             HeatmapSource.WATCHLIST -> R.string.widget_heatmap_label_watchlist
+            HeatmapSource.PLAN -> R.string.widget_heatmap_label_plan
         },
     )
 
@@ -159,6 +179,7 @@ private fun HeatmapContent(entries: List<HeatmapEntry>, source: HeatmapSource) {
                     when (source) {
                         HeatmapSource.PORTFOLIO -> R.string.widget_empty_portfolio
                         HeatmapSource.WATCHLIST -> R.string.widget_empty_watchlist
+                        HeatmapSource.PLAN -> R.string.widget_empty_plan
                     },
                 ),
                 tint = ColorProvider(HeatOnBackground),
