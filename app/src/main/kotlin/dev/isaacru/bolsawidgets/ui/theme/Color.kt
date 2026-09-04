@@ -33,8 +33,16 @@ val HeatLossVivid = Color(0xFFC93B31)
 /** Background of the heat map widget, and the ground its corners are cut against. */
 val HeatBackground = Color(0xFF0B0E10)
 
-/** Header text on [HeatBackground]: present, but never competing with the tiles. */
+/** Text on [HeatBackground]: present, but never competing with the tiles. */
 val HeatOnBackground = Color(0xFF8A9199)
+
+/**
+ * The refresh control, which floats over the map itself.
+ *
+ * Translucent white rather than a grey: it has to stay visible over a vivid tile and
+ * disappear over a dim one, and only a colour that takes the tile with it can do both.
+ */
+val HeatOverlay = Color(0x99FFFFFF)
 
 internal val BrandGreen = Color(0xFF0F3D2E)
 internal val BrandGreenLight = Color(0xFF3E6B58)

@@ -309,6 +309,12 @@ leer. El bitmap se dibuja sin antialiasing y con los bordes redondeados hacia fu
 si no, entre celda y celda se cuela una línea de fondo que es justo la rejilla que se
 quería quitar.
 
+Después se le quitó también la cabecera: el mapa ocupa el widget entero, esquina a esquina,
+y el título ya solo existe como descripción para el lector de pantalla —los tickers de las
+celdas dicen lo que es—. El refresco manual no se pierde: flota sobre la esquina superior
+en blanco translúcido, que es lo único que se ve igual de bien sobre una celda encendida
+que sobre una apagada.
+
 ---
 
 ## Criterios de aceptación v1

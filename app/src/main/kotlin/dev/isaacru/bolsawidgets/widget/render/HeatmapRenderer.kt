@@ -34,9 +34,8 @@ object HeatmapRenderer {
     private const val MIN_LABEL_TEXT_PX = 9f
 
     /**
-     * Renders [entries] at [size]. [cornerRadiusPx] rounds the two bottom corners so the
-     * map can run to the edges of a rounded widget without poking out of it; the top
-     * corners are left square because the header sits above them.
+     * Renders [entries] at [size]. [cornerRadiusPx] rounds the corners so the map can run
+     * to the edges of a rounded widget without poking out of it.
      */
     fun render(
         entries: List<HeatmapEntry>,
@@ -84,23 +83,24 @@ object HeatmapRenderer {
             drawLabels(canvas, tile, entry, symbolPaint, changePaint)
         }
 
-        if (cornerRadiusPx > 0f) roundBottomCorners(canvas, size, cornerRadiusPx)
+        if (cornerRadiusPx > 0f) roundCorners(canvas, size, cornerRadiusPx)
         return bitmap
     }
 
     /**
-     * Cuts the bottom corners out of what has already been drawn.
+     * Cuts the corners out of what has already been drawn.
      *
-     * Clipping first would leave the corners jagged; masking afterwards with DST_IN keeps
-     * the destination only where the rounded path is opaque, so the curve is as smooth as
-     * the path that drew it.
+     * Clipping first would leave them jagged; masking afterwards with DST_IN keeps the
+     * destination only where the rounded path is opaque, so the curve is as smooth as the
+     * path that drew it.
      */
-    private fun roundBottomCorners(canvas: Canvas, size: PixelSize, radius: Float) {
+    private fun roundCorners(canvas: Canvas, size: PixelSize, radius: Float) {
         val r = radius.coerceAtMost(minOf(size.width, size.height) / 2f)
         val path = Path().apply {
             addRoundRect(
                 RectF(0f, 0f, size.width.toFloat(), size.height.toFloat()),
-                floatArrayOf(0f, 0f, 0f, 0f, r, r, r, r),
+                r,
+                r,
                 Path.Direction.CW,
             )
         }

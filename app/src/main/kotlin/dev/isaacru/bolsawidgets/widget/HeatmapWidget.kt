@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.glance.ColorFilter
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
@@ -15,17 +16,18 @@ import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.SizeMode
+import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.background
+import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
-import androidx.glance.layout.Column
 import androidx.glance.layout.ContentScale
 import androidx.glance.layout.fillMaxSize
-import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.padding
+import androidx.glance.layout.size
 import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.unit.ColorProvider
 import dev.isaacru.bolsawidgets.R
@@ -33,6 +35,7 @@ import dev.isaacru.bolsawidgets.domain.model.PortfolioSummary
 import dev.isaacru.bolsawidgets.domain.model.WatchlistRow
 import dev.isaacru.bolsawidgets.ui.theme.HeatBackground
 import dev.isaacru.bolsawidgets.ui.theme.HeatOnBackground
+import dev.isaacru.bolsawidgets.ui.theme.HeatOverlay
 import dev.isaacru.bolsawidgets.widget.render.BitmapBudget
 import dev.isaacru.bolsawidgets.widget.render.HeatmapEntry
 import dev.isaacru.bolsawidgets.widget.render.HeatmapRenderer
@@ -115,9 +118,15 @@ class HeatmapWidgetReceiver : GlanceAppWidgetReceiver() {
 private fun HeatmapContent(entries: List<HeatmapEntry>, source: HeatmapSource) {
     val context = LocalContext.current
     val size = LocalSize.current
-    val tint = ColorProvider(HeatOnBackground)
+    // No title on screen, so the map says which one it is to a screen reader instead.
+    val label = context.getString(
+        when (source) {
+            HeatmapSource.PORTFOLIO -> R.string.widget_heatmap_label
+            HeatmapSource.WATCHLIST -> R.string.widget_heatmap_label_watchlist
+        },
+    )
 
-    Column(
+    Box(
         modifier = GlanceModifier
             .fillMaxSize()
             // The map keeps its own dark ground in both themes: it is a block of colour,
@@ -126,18 +135,6 @@ private fun HeatmapContent(entries: List<HeatmapEntry>, source: HeatmapSource) {
             .cornerRadius(CORNER_DP.dp)
             .clickable(actionStartActivity(openPortfolioIntent(context))),
     ) {
-        Box(modifier = GlanceModifier.padding(start = 12.dp, end = 10.dp, top = 8.dp)) {
-            WidgetHeader(
-                title = context.getString(
-                    when (source) {
-                        HeatmapSource.PORTFOLIO -> R.string.widget_heatmap_label
-                        HeatmapSource.WATCHLIST -> R.string.widget_heatmap_label_watchlist
-                    },
-                ),
-                tint = tint,
-            )
-        }
-
         if (entries.isEmpty()) {
             EmptyMessage(
                 text = context.getString(
@@ -146,33 +143,47 @@ private fun HeatmapContent(entries: List<HeatmapEntry>, source: HeatmapSource) {
                         HeatmapSource.WATCHLIST -> R.string.widget_empty_watchlist
                     },
                 ),
-                tint = tint,
+                tint = ColorProvider(HeatOnBackground),
             )
-            return@Column
+        } else {
+            // Corner to corner: with no header there is nothing left to make room for,
+            // and the tickers inside the tiles already say what the map is.
+            val widthDp = size.width.value.coerceAtLeast(48f)
+            val heightDp = size.height.value.coerceAtLeast(48f)
+            val density = context.resources.displayMetrics.density
+            val pixels = BitmapBudget.sizeFor(widthDp, heightDp, density)
+            val bitmap = HeatmapRenderer.render(
+                entries = entries,
+                size = pixels,
+                // Expressed in the bitmap's own pixels, which stop being screen pixels as
+                // soon as the budget scales the drawing down.
+                cornerRadiusPx = CORNER_DP * pixels.width / widthDp,
+            )
+
+            Image(
+                provider = ImageProvider(bitmap),
+                contentDescription = label,
+                contentScale = ContentScale.FillBounds,
+                modifier = GlanceModifier.fillMaxSize(),
+            )
         }
 
-        // Full width and hard against the bottom edge: the tiles are the widget, so the
-        // only margin left is the one above them that the header needs.
-        val widthDp = size.width.value.coerceAtLeast(48f)
-        val heightDp = (size.height.value - HEADER_DP).coerceAtLeast(48f)
-        val density = context.resources.displayMetrics.density
-        val pixels = BitmapBudget.sizeFor(widthDp, heightDp, density)
-        val bitmap = HeatmapRenderer.render(
-            entries = entries,
-            size = pixels,
-            // Expressed in the bitmap's own pixels, which stop being screen pixels as
-            // soon as the budget scales the drawing down.
-            cornerRadiusPx = CORNER_DP * pixels.width / widthDp,
-        )
-
-        Image(
-            provider = ImageProvider(bitmap),
-            contentDescription = context.getString(R.string.widget_heatmap_label),
-            contentScale = ContentScale.FillBounds,
-            modifier = GlanceModifier.fillMaxWidth().defaultWeight(),
-        )
+        // The manual refresh has to live somewhere, so it floats over the top corner:
+        // small, half-transparent, and out of the way of the labels, which are centred.
+        Box(
+            modifier = GlanceModifier.fillMaxSize().padding(6.dp),
+            contentAlignment = Alignment.TopEnd,
+        ) {
+            Image(
+                provider = ImageProvider(R.drawable.ic_widget_refresh),
+                contentDescription = context.getString(R.string.widget_refresh),
+                colorFilter = ColorFilter.tint(ColorProvider(HeatOverlay)),
+                modifier = GlanceModifier
+                    .size(18.dp)
+                    .clickable(actionRunCallback<RefreshWidgetsAction>()),
+            )
+        }
     }
 }
 
-private const val HEADER_DP = 32f
 private const val CORNER_DP = 16f
