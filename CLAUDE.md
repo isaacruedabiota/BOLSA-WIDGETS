@@ -210,12 +210,25 @@ Yahoo Finance son endpoints públicos no documentados. Se asume que fallan.
 
 ## 7. Refresco
 
-- `PeriodicWorkRequest` con el intervalo de Ajustes (mínimo 15 min) y `NetworkType.CONNECTED`,
-  encolado como trabajo único (`RefreshScheduler`) al arrancar la app y al cambiar el
-  intervalo. WorkManager se inicializa **on demand** desde `BolsaWidgetsApp` para que Hilt
-  pueda construir los workers; por eso el manifest quita `WorkManagerInitializer`.
-- **Consciente de horario de mercado** (`MarketClock`, testeable): si todos los símbolos
-  siguen mercados cerrados, el worker vuelve sin abrir un socket.
+> **Regla de oro de la batería: nada de red fuera del worker.** Ni un redibujado de widget,
+> ni una recomposición, ni abrir una pantalla. El worker periódico y los refrescos que pide
+> el usuario a propósito son los únicos que abren un socket. Un redibujado ocurre por
+> motivos que el usuario no ha pedido —reiniciar el lanzador, redimensionar, cualquier
+> escritura en Room— y a cualquier hora; si uno de esos puede descargar, se descarga de
+> madrugada.
+
+- `PeriodicWorkRequest` con el intervalo de Ajustes (mínimo 15 min), `NetworkType.CONNECTED`
+  y **`setRequiresBatteryNotLow`**, encolado como trabajo único (`RefreshScheduler`) al
+  arrancar la app y al cambiar el intervalo. WorkManager se inicializa **on demand** desde
+  `BolsaWidgetsApp` para que Hilt pueda construir los workers; por eso el manifest quita
+  `WorkManagerInitializer`.
+- **Sin widgets colocados, el worker no hace nada**: comprueba `AppWidgetManager` y vuelve
+  antes de tocar disco o radio. El refresco en segundo plano existe para la pantalla de
+  inicio; si no hay nada que mantener al día, la app ya se refresca al abrirse.
+- **Consciente de horario de mercado** (`MarketClock`, testeable) **símbolo a símbolo**: se
+  descartan los que siguen una plaza cerrada, y si no queda ninguno el worker vuelve sin
+  abrir un socket. No es todo o nada: con Nueva York abierta y Madrid cerrada, pedir los
+  valores del IBEX compra un precio que no puede haberse movido.
   - Las ventanas se declaran en la **zona horaria de cada plaza**, no en hora de Madrid.
     Europa y EE. UU. no cambian de horario de verano el mismo día, así que un par de
     semanas al año Nueva York abre a las 14:30 de Madrid en vez de a las 15:30. Declarando
@@ -231,7 +244,16 @@ Yahoo Finance son endpoints públicos no documentados. Se asume que fallan.
 - El worker nunca devuelve `Result.retry()`: el repositorio ya reintenta los fallos
   transitorios con backoff y el siguiente periodo está a minutos. Despertar la radio con el
   backoff de WorkManager sería gastar batería para nada.
-- FX se refresca como mucho **1 vez por hora**.
+- FX se refresca como mucho **1 vez por hora**, y solo para las divisas que hay en pantalla.
+- **Las velas del sparkline las mantiene el worker**, no el widget: el widget dibuja de
+  caché (`CACHE_ONLY`) y solo descarga si no hay nada guardado. Es la aplicación directa de
+  la regla de oro, y es el único redibujo que el worker se reserva, porque la tabla de velas
+  no la observa nadie.
+- **Un solo sitio redibuja los widgets**: el observador de `BolsaWidgetsApp`. Y lo que
+  colecta es una **firma de lo que los widgets imprimen** (símbolo, precio, variación,
+  aportación, modo privacidad), no los datos: cada fetch con éxito reescribe su fila con
+  marca de hora nueva aunque el precio no se haya movido, y sin la firma eso serían cuatro
+  widgets redibujados —y un bitmap de mapa de calor— cada cuarto de hora, todo el día.
 
 ---
 

@@ -44,6 +44,7 @@ import dev.isaacru.bolsawidgets.ui.theme.Loss
 import dev.isaacru.bolsawidgets.ui.theme.Neutral
 import dev.isaacru.bolsawidgets.widget.render.BitmapBudget
 import dev.isaacru.bolsawidgets.widget.render.SparklineRenderer
+import java.time.Duration
 
 /**
  * One configurable ticker with a sparkline.
@@ -71,7 +72,12 @@ class SparklineWidget : GlanceAppWidget() {
         val entryPoint = WidgetEntryPoint.from(context)
         val quotes = entryPoint.quoteRepository()
         val quote = symbol?.let { quotes.getCachedQuotes(listOf(it))[it.uppercase()] }
-        val series = symbol?.let { quotes.getCandleSeries(it, range, range.cacheMaxAge) }
+        // Cache only. A redraw happens for all sorts of reasons the user never asked
+        // for -- a launcher restart, a resize, any edit in the app, every worker run --
+        // and letting one of those fetch a chart means downloading at three in the
+        // morning. The worker keeps the series fresh on its own cadence instead; the
+        // long max age still allows the very first fetch, when there is no cache at all.
+        val series = symbol?.let { quotes.getCandleSeries(it, range, CACHE_ONLY) }
 
         provideContent {
             GlanceTheme {
@@ -83,6 +89,9 @@ class SparklineWidget : GlanceAppWidget() {
     companion object {
         val KEY_SYMBOL = stringPreferencesKey("sparkline_symbol")
         val KEY_RANGE = stringPreferencesKey("sparkline_range")
+
+        /** Long enough that only an empty cache leads to a request. */
+        private val CACHE_ONLY: Duration = Duration.ofDays(365)
     }
 }
 

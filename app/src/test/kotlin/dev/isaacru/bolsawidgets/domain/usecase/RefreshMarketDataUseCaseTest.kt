@@ -6,10 +6,8 @@ import dev.isaacru.bolsawidgets.domain.model.Candle
 import dev.isaacru.bolsawidgets.domain.model.CandleInterval
 import dev.isaacru.bolsawidgets.domain.model.ChartRange
 import dev.isaacru.bolsawidgets.domain.model.Contribution
-import dev.isaacru.bolsawidgets.domain.model.Position
 import dev.isaacru.bolsawidgets.domain.model.Quote
 import dev.isaacru.bolsawidgets.domain.model.WatchlistItem
-import dev.isaacru.bolsawidgets.domain.repository.PortfolioRepository
 import dev.isaacru.bolsawidgets.domain.repository.QuoteRepository
 import dev.isaacru.bolsawidgets.domain.repository.CandleSeries
 import dev.isaacru.bolsawidgets.domain.repository.RefreshOutcome
@@ -25,7 +23,6 @@ import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDateTime
-import java.time.LocalDate
 import java.time.ZoneId
 
 /**
@@ -50,13 +47,26 @@ class RefreshMarketDataUseCaseTest {
     }
 
     @Test
-    fun `refreshes while Wall Street is open even though Madrid has closed`() = runTest {
+    fun `fetches only the symbol whose own market is open`() = runTest {
         val quotes = FakeQuoteRepository()
+        // 18:00 in Madrid: the BME closed at 17:35 and its grace ran out at 17:55, but
+        // Wall Street is mid-session. Asking Yahoo for SAN.MC here would buy a price that
+        // cannot have moved since the close.
         val useCase = useCaseAt("2026-08-25", 18, 0, quotes)
 
         val outcome = useCase(respectMarketHours = true)
 
         assertFalse(outcome.skippedMarketsClosed)
+        assertEquals(listOf(listOf("AAPL")), quotes.quoteRefreshes)
+    }
+
+    @Test
+    fun `a closed market is still refreshed when the user asks for it`() = runTest {
+        val quotes = FakeQuoteRepository()
+        val useCase = useCaseAt("2026-08-25", 18, 0, quotes)
+
+        useCase(respectMarketHours = false)
+
         assertEquals(listOf(listOf("SAN.MC", "AAPL")), quotes.quoteRefreshes)
     }
 
@@ -89,7 +99,7 @@ class RefreshMarketDataUseCaseTest {
     }
 
     @Test
-    fun `asks for the FX of every currency the portfolio touches`() = runTest {
+    fun `asks for the FX of every currency on screen`() = runTest {
         val quotes = FakeQuoteRepository(
             cached = mapOf("AAPL" to quote("AAPL", Instant.EPOCH, currency = "USD")),
         )
@@ -104,7 +114,7 @@ class RefreshMarketDataUseCaseTest {
     @Test
     fun `an empty app does nothing`() = runTest {
         val quotes = FakeQuoteRepository()
-        val useCase = useCaseAt("2026-08-25", 16, 0, quotes, positions = emptyList(), watchlist = emptyList())
+        val useCase = useCaseAt("2026-08-25", 16, 0, quotes, watchlist = emptyList())
 
         val outcome = useCase(respectMarketHours = true)
 
@@ -118,12 +128,13 @@ class RefreshMarketDataUseCaseTest {
         hour: Int,
         minute: Int,
         quotes: FakeQuoteRepository,
-        positions: List<Position> = listOf(position("SAN.MC")),
-        watchlist: List<WatchlistItem> = listOf(WatchlistItem("AAPL", "Apple", 0)),
+        watchlist: List<WatchlistItem> = listOf(
+            WatchlistItem("SAN.MC", "Santander", 0),
+            WatchlistItem("AAPL", "Apple", 1),
+        ),
     ): RefreshMarketDataUseCase {
         val clock = Clock.fixed(madridAt(date, hour, minute), madrid)
         return RefreshMarketDataUseCase(
-            portfolioRepository = FakePortfolioRepository(positions),
             watchlistRepository = FakeWatchlistRepository(watchlist),
             quoteRepository = quotes,
             marketClock = MarketClock(clock),
@@ -136,17 +147,6 @@ class RefreshMarketDataUseCaseTest {
             date + "T" + hour.toString().padStart(2, '0') + ":" + minute.toString().padStart(2, '0') + ":00",
         ).atZone(madrid).toInstant()
 
-    private fun position(symbol: String) = Position(
-        id = 1,
-        symbol = symbol,
-        name = symbol,
-        exchange = "TEST",
-        quantity = 1.0,
-        averageBuyPrice = 10.0,
-        currency = "EUR",
-        purchaseDate = LocalDate.of(2026, 1, 1),
-    )
-
     private fun quote(symbol: String, at: Instant, currency: String = "EUR") = Quote(
         symbol = symbol,
         price = 10.0,
@@ -154,16 +154,6 @@ class RefreshMarketDataUseCaseTest {
         currency = currency,
         timestamp = at,
     )
-
-    private class FakePortfolioRepository(private val positions: List<Position>) : PortfolioRepository {
-        override suspend fun getPositions(): List<Position> = positions
-        override fun observePositions(): Flow<List<Position>> = flowOf(positions)
-        override fun observeHeldSymbols(): Flow<List<String>> = flowOf(positions.map { it.symbol })
-        override suspend fun getPosition(id: Long): Position? = positions.firstOrNull { it.id == id }
-        override suspend fun upsert(position: Position): Long = position.id
-        override suspend fun delete(id: Long) = Unit
-        override suspend fun replaceAll(positions: List<Position>) = Unit
-    }
 
     private class FakeWatchlistRepository(private val items: List<WatchlistItem>) : WatchlistRepository {
         override suspend fun getItems(): List<WatchlistItem> = items

@@ -4,7 +4,6 @@ import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import dagger.hilt.android.HiltAndroidApp
-import dev.isaacru.bolsawidgets.domain.repository.PortfolioRepository
 import dev.isaacru.bolsawidgets.domain.repository.QuoteRepository
 import dev.isaacru.bolsawidgets.domain.repository.SettingsRepository
 import dev.isaacru.bolsawidgets.domain.repository.WatchlistRepository
@@ -16,6 +15,7 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -31,9 +31,6 @@ class BolsaWidgetsApp : Application(), Configuration.Provider {
 
     @Inject
     lateinit var widgetUpdater: WidgetUpdater
-
-    @Inject
-    lateinit var portfolioRepository: PortfolioRepository
 
     @Inject
     lateinit var watchlistRepository: WatchlistRepository
@@ -65,35 +62,51 @@ class BolsaWidgetsApp : Application(), Configuration.Provider {
     }
 
     /**
-     * Keeps the widgets in step with edits made inside the app.
+     * The single place the widgets get redrawn from.
      *
-     * The background worker redraws them after its own fetches, but adding a position or
-     * removing a symbol has to show up straight away too. Watching Room here covers every
-     * mutation path at once, instead of sprinkling redraw calls through the ViewModels
-     * and coupling the ui layer to the widget one.
+     * Watching Room here covers every mutation path at once — the app, the background
+     * worker, a CSV restore — instead of sprinkling redraw calls around and coupling the
+     * ui layer to the widget one. Preferences are watched alongside because the privacy
+     * switch changes what the widgets are allowed to print.
      *
-     * Preferences are watched alongside the data because the privacy switch changes what
-     * the widgets are allowed to print, and it would otherwise keep showing the amounts
-     * until the next price came in.
+     * What is collected is a signature of exactly what the widgets put on screen, not the
+     * data itself, so the many writes that change nothing visible cost nothing. Every
+     * successful fetch rewrites its row with a new timestamp even when the price has not
+     * moved; without this, each of those would redraw four widgets and redraw the heat
+     * map's bitmap, on the periodic cadence, all day.
      */
     @OptIn(FlowPreview::class)
     private fun observeDataForWidgets() {
         applicationScope.launch {
             combine(
-                portfolioRepository.observePositions(),
                 watchlistRepository.observeItems(),
                 quoteRepository.observeQuotes(),
                 settingsRepository.preferences,
-            ) { _, _, _, _ -> Unit }
+            ) { items, quotes, preferences ->
+                items.joinToString("|") { item ->
+                    val quote = quotes[item.symbol.uppercase()]
+                    listOf(
+                        item.symbol,
+                        item.contribution?.monthlyEur?.toString().orEmpty(),
+                        quote?.price?.toString().orEmpty(),
+                        quote?.changePercent?.toString().orEmpty(),
+                        quote?.currency.orEmpty(),
+                    ).joinToString(",")
+                } + "#" + preferences.privacyMode
+            }
                 // The first emission is just the current contents, which the widgets
                 // already drew for themselves.
                 .drop(1)
+                .distinctUntilChanged()
                 .debounce(WIDGET_UPDATE_DEBOUNCE_MILLIS)
-                .collect { widgetUpdater.updateAll() }
+                // One failed redraw must not take the collector down with it: this flow
+                // is the only thing keeping the widgets current for the whole process.
+                .collect { runCatching { widgetUpdater.updateAll() } }
         }
     }
 
     private companion object {
-        const val WIDGET_UPDATE_DEBOUNCE_MILLIS = 500L
+        /** Long enough to coalesce a burst of writes, short enough to feel immediate. */
+        const val WIDGET_UPDATE_DEBOUNCE_MILLIS = 800L
     }
 }

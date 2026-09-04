@@ -40,9 +40,12 @@ class RefreshScheduler @Inject constructor(
         val request = PeriodicWorkRequestBuilder<RefreshQuotesWorker>(interval, TimeUnit.MINUTES)
             .setConstraints(
                 Constraints.Builder()
-                    // The only constraint the spec asks for. Anything stricter would make
-                    // the widgets go stale for reasons the user cannot see.
                     .setRequiredNetworkType(NetworkType.CONNECTED)
+                    // A price is never worth the last of the battery. Below the system's
+                    // low threshold the run waits: the widgets keep their cached values
+                    // with their timestamps, which is the same thing that happens with no
+                    // signal, and the phone gets to spend what is left on being a phone.
+                    .setRequiresBatteryNotLow(true)
                     .build(),
             )
             .addTag(TAG)

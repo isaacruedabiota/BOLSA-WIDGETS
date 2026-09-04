@@ -354,6 +354,29 @@ Efecto colateral pendiente de decidir: el **modo privacidad** ocultaba importes 
 todos los sitios donde lo hacía eran de cartera. Ahora mismo es un interruptor que no oculta
 nada.
 
+**Batería y segundo plano**. Cinco cosas, de la que más gastaba a la que menos:
+
+1. **El sparkline descargaba el gráfico dentro del redibujado.** `provideGlance` pedía la
+   serie con su `cacheMaxAge` (15 min en 1D), así que cualquier redibujado —reiniciar el
+   lanzador, redimensionar, cualquier escritura en Room— podía abrir una conexión, a las
+   tres de la mañana incluido. Ahora el widget dibuja de caché y es el worker quien mantiene
+   la serie fresca, en su cadencia y solo con la plaza abierta.
+2. **El horario de mercado se aplica símbolo a símbolo.** Antes bastaba con que una plaza
+   estuviera abierta para pedir la lista entera: con Nueva York abierta y Madrid cerrada, se
+   pedían igualmente los cuatro valores del IBEX cada cuarto de hora hasta las 22:00.
+3. **Sin widgets colocados el worker vuelve sin hacer nada**, antes de tocar disco o radio.
+4. **Un solo camino de redibujado, y solo cuando cambia lo que se ve.** El worker redibujaba
+   por su cuenta y el observador otra vez 500 ms después; y el observador saltaba con
+   cualquier escritura, aunque solo cambiara la marca de hora. Ahora el observador es el
+   único, colecta una firma de lo que los widgets imprimen y `distinctUntilChanged` corta el
+   resto. Además el `collect` va envuelto en `runCatching`: un fallo dejaba muerto el
+   observador para todo el proceso, que es probablemente lo que se vio una vez con GLD.
+5. **`setRequiresBatteryNotLow`** en el trabajo periódico, y ya no se refrescan los símbolos
+   de posiciones (que no se ven en ninguna parte) ni divisas que no estén en pantalla.
+
+Medido en el emulador: guardar una aportación redibuja los cuatro widgets y hace **cero**
+peticiones HTTP. Antes, ese mismo redibujado podía traerse un gráfico entero.
+
 ---
 
 ## Criterios de aceptación v1
