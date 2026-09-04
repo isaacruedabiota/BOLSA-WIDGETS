@@ -98,6 +98,13 @@ dev.isaacru.bolsawidgets
 
 ## 4. Reglas de dominio
 
+> **La cartera ya no está en la app.** No hay pestaña, ni editor de posiciones, ni widget de
+> cartera, ni origen "cartera" en el mapa de calor: el usuario no lleva posiciones, lleva un
+> plan de aportaciones. Lo que sobrevive es la capa de datos —`Position`, su tabla de Room,
+> `PortfolioCalculator` y las filas `posicion` del CSV—, a propósito y sin consumidores: así
+> no se destruye nada de lo ya guardado y una copia de seguridad antigua se sigue
+> restaurando. Las reglas de abajo siguen valiendo para ese código.
+
 - **Divisa base: EUR.** Todo importe agregado de cartera se expresa en EUR.
 - La conversión usa el **snapshot de FX cacheado**, incluido el coste de adquisición: la
   cartera se valora íntegramente a tipo de cambio de hoy.
@@ -181,9 +188,9 @@ Yahoo Finance son endpoints públicos no documentados. Se asume que fallan.
   para reconfigurar un widget ya colocado y arrancar en los valores por defecto cambiaría
   la configuración sin querer.
 - El **área de una celda del mapa de calor es siempre dinero**, pero cuál depende del
-  origen elegido: valor de la posición (cartera), precio de un título (seguimiento) o
-  aportación mensual (plan). Los tres **no se mezclan nunca** en un mismo mapa; en cuanto
-  conviven dos de esas medidas, el área deja de significar nada.
+  origen elegido: precio de un título (seguimiento) o aportación mensual (plan). Los dos
+  **no se mezclan nunca** en un mismo mapa; en cuanto conviven dos medidas distintas, el
+  área deja de significar nada.
 - Cada widget lleva su propio botón de refresco manual, que **ignora el horario de mercado**
   igual que el de la app.
 - Glance instancia los `GlanceAppWidget` el framework, no Hilt: las dependencias se obtienen

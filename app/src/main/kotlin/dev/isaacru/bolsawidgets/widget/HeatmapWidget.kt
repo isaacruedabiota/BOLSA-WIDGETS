@@ -32,7 +32,6 @@ import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.unit.ColorProvider
 import dev.isaacru.bolsawidgets.R
 import dev.isaacru.bolsawidgets.domain.calc.CurrencyConverter
-import dev.isaacru.bolsawidgets.domain.model.PortfolioSummary
 import dev.isaacru.bolsawidgets.domain.model.WatchlistRow
 import dev.isaacru.bolsawidgets.ui.theme.HeatBackground
 import dev.isaacru.bolsawidgets.ui.theme.HeatOnBackground
@@ -44,9 +43,6 @@ import kotlinx.coroutines.flow.first
 
 /** What the map is drawn from. Whichever it is, the area of a tile is an amount of money. */
 enum class HeatmapSource {
-    /** Positions, tile area proportional to what the holding is worth in euros. */
-    PORTFOLIO,
-
     /**
      * Followed symbols, tile area proportional to the price of one share in euros, which
      * is the only value a symbol you do not hold has.
@@ -64,10 +60,9 @@ enum class HeatmapSource {
 /**
  * Finviz-style heat map: colour by the day's move, area by value.
  *
- * The source is per-instance state chosen when the widget is placed, because the three
- * modes measure different things. What a holding is worth, what one share costs and what
- * you put in every month are three different quantities, and a map that mixed them would
- * have an area that means nothing.
+ * The source is per-instance state chosen when the widget is placed, because the two modes
+ * measure different things. What one share costs and what you put into it every month are
+ * different quantities, and a map that mixed them would have an area that means nothing.
  *
  * Drawn to a bitmap because RemoteViews has no Canvas of its own, and sized from the real
  * widget size so it stays sharp when resized.
@@ -80,14 +75,14 @@ class HeatmapWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val preferences = getAppWidgetState(context, PreferencesGlanceStateDefinition, id)
-        // Widgets placed before the setting existed keep their original behaviour.
+        // Anything unreadable, including the portfolio source that no longer exists, falls
+        // back to the watchlist rather than leaving the widget blank.
         val source = preferences[KEY_SOURCE]
             ?.let { stored -> HeatmapSource.entries.firstOrNull { it.name == stored } }
-            ?: HeatmapSource.PORTFOLIO
+            ?: HeatmapSource.WATCHLIST
 
         val entryPoint = WidgetEntryPoint.from(context)
         val entries = when (source) {
-            HeatmapSource.PORTFOLIO -> entryPoint.observePortfolio().invoke().first().toEntries()
             HeatmapSource.WATCHLIST -> {
                 // Prices come in whatever currency each market quotes in, so the map needs
                 // the FX snapshot to put them all on one scale before comparing areas.
@@ -110,18 +105,6 @@ class HeatmapWidget : GlanceAppWidget() {
         val KEY_SOURCE = stringPreferencesKey("heatmap_source")
     }
 }
-
-private fun PortfolioSummary.toEntries(): List<HeatmapEntry> = positions
-    // A tile with no area cannot be drawn, and an unpriced position has no meaningful
-    // colour either; both are already flagged inside the app.
-    .filter { it.marketValueEur > 0.0 }
-    .map {
-        HeatmapEntry(
-            symbol = it.position.symbol,
-            weight = it.marketValueEur,
-            changePercent = if (it.isPriced) it.dayPnlPercent else 0.0,
-        )
-    }
 
 private fun List<WatchlistRow>.toEntries(
     converter: CurrencyConverter,
@@ -158,8 +141,7 @@ private fun HeatmapContent(entries: List<HeatmapEntry>, source: HeatmapSource) {
     // No title on screen, so the map says which one it is to a screen reader instead.
     val label = context.getString(
         when (source) {
-            HeatmapSource.PORTFOLIO -> R.string.widget_heatmap_label
-            HeatmapSource.WATCHLIST -> R.string.widget_heatmap_label_watchlist
+            HeatmapSource.WATCHLIST -> R.string.widget_heatmap_label
             HeatmapSource.PLAN -> R.string.widget_heatmap_label_plan
         },
     )
@@ -171,13 +153,12 @@ private fun HeatmapContent(entries: List<HeatmapEntry>, source: HeatmapSource) {
             // and a white frame around it would be the brightest thing on the screen.
             .background(ColorProvider(HeatBackground))
             .cornerRadius(CORNER_DP.dp)
-            .clickable(actionStartActivity(openPortfolioIntent(context))),
+            .clickable(actionStartActivity(openWatchlistIntent(context))),
     ) {
         if (entries.isEmpty()) {
             EmptyMessage(
                 text = context.getString(
                     when (source) {
-                        HeatmapSource.PORTFOLIO -> R.string.widget_empty_portfolio
                         HeatmapSource.WATCHLIST -> R.string.widget_empty_watchlist
                         HeatmapSource.PLAN -> R.string.widget_empty_plan
                     },

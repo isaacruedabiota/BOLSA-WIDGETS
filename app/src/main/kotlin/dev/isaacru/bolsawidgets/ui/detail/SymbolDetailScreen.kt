@@ -123,7 +123,7 @@ fun SymbolDetailScreen(
                     }
                     Text(
                         text = stringResource(
-                            R.string.portfolio_last_update,
+                            R.string.detail_last_update,
                             Format.dateTime(quote.timestamp, viewModel.zoneId),
                         ),
                         style = MaterialTheme.typography.labelSmall,
@@ -143,16 +143,6 @@ fun SymbolDetailScreen(
             }
 
             ChartCard(state = state)
-
-            if (state.isHeld) {
-                PositionCard(state = state)
-            } else {
-                Text(
-                    text = stringResource(R.string.detail_not_held),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
 
             Text(text = "", modifier = Modifier.height(8.dp))
         }
@@ -228,102 +218,6 @@ private fun ChartCard(state: SymbolDetailUiState) {
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun PositionCard(state: SymbolDetailUiState) {
-    val valuation = state.valuation ?: return
-    val position = valuation.position
-
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.detail_your_position),
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            DetailRow(
-                stringResource(R.string.editor_quantity),
-                Format.quantity(position.quantity),
-            )
-            DetailRow(
-                stringResource(R.string.editor_buy_price),
-                Format.price(position.averageBuyPrice, position.currency),
-            )
-            if (!state.privacyMode) {
-                DetailRow(
-                    stringResource(R.string.portfolio_total_value),
-                    Format.money(valuation.marketValueEur),
-                )
-                DetailRow(
-                    stringResource(R.string.portfolio_cost_basis),
-                    Format.money(valuation.costBasisEur),
-                )
-            }
-            HorizontalDivider()
-            PnlRow(
-                label = stringResource(R.string.portfolio_day_pnl),
-                amountEur = valuation.dayPnlEur,
-                percent = valuation.dayPnlPercent,
-                privacyMode = state.privacyMode,
-            )
-            PnlRow(
-                label = stringResource(R.string.portfolio_total_pnl),
-                amountEur = valuation.totalPnlEur,
-                percent = valuation.totalPnlPercent,
-                privacyMode = state.privacyMode,
-            )
-            Text(
-                text = pluralStringResource(R.plurals.count_lots, state.lots.size, state.lots.size),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-@Composable
-private fun DetailRow(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(text = value, style = MaterialTheme.typography.bodyMedium)
-    }
-}
-
-@Composable
-private fun PnlRow(label: String, amountEur: Double, percent: Double, privacyMode: Boolean) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (!privacyMode) {
-                Text(
-                    text = Format.signedMoney(amountEur),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = changeColor(amountEur),
-                    fontWeight = FontWeight.Medium,
-                )
-            }
-            ChangeIndicator(percent = percent, style = MaterialTheme.typography.bodyMedium)
         }
     }
 }

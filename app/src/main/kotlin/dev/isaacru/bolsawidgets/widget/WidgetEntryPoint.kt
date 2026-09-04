@@ -7,7 +7,6 @@ import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import dev.isaacru.bolsawidgets.domain.repository.QuoteRepository
 import dev.isaacru.bolsawidgets.domain.repository.SettingsRepository
-import dev.isaacru.bolsawidgets.domain.usecase.ObservePortfolioUseCase
 import dev.isaacru.bolsawidgets.domain.usecase.ObserveWatchlistUseCase
 import dev.isaacru.bolsawidgets.domain.usecase.RefreshMarketDataUseCase
 import java.time.ZoneId
@@ -24,8 +23,6 @@ import java.time.ZoneId
 interface WidgetEntryPoint {
 
     fun observeWatchlist(): ObserveWatchlistUseCase
-
-    fun observePortfolio(): ObservePortfolioUseCase
 
     fun settingsRepository(): SettingsRepository
 

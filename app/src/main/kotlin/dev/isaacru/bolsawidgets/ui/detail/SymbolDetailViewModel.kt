@@ -5,13 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dev.isaacru.bolsawidgets.domain.calc.PortfolioCalculator
 import dev.isaacru.bolsawidgets.domain.model.Candle
 import dev.isaacru.bolsawidgets.domain.model.ChartRange
-import dev.isaacru.bolsawidgets.domain.model.Position
-import dev.isaacru.bolsawidgets.domain.model.PositionValuation
 import dev.isaacru.bolsawidgets.domain.model.Quote
-import dev.isaacru.bolsawidgets.domain.repository.PortfolioRepository
 import dev.isaacru.bolsawidgets.domain.repository.QuoteRepository
 import dev.isaacru.bolsawidgets.domain.repository.SettingsRepository
 import dev.isaacru.bolsawidgets.ui.navigation.SymbolDetailRoute
@@ -34,17 +30,13 @@ data class SymbolDetailUiState(
     val seriesFetchedAt: Instant? = null,
     val isLoadingChart: Boolean = false,
     val chartUnavailable: Boolean = false,
-    val lots: List<Position> = emptyList(),
-    val valuation: PositionValuation? = null,
     val privacyMode: Boolean = false,
 ) {
-    val isHeld: Boolean get() = lots.isNotEmpty()
-
-    val displayName: String get() = quote?.shortName ?: lots.firstOrNull()?.name ?: symbol
+    val displayName: String get() = quote?.shortName ?: symbol
 }
 
 /**
- * The expanded view of one symbol: its chart, and what you hold of it if anything.
+ * The expanded view of one symbol: its price and its chart.
  *
  * The chart is loaded imperatively per range because it is the one thing here that can
  * touch the network; everything else is observed from Room and therefore works offline.
@@ -52,7 +44,6 @@ data class SymbolDetailUiState(
 @HiltViewModel
 class SymbolDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    portfolioRepository: PortfolioRepository,
     settingsRepository: SettingsRepository,
     private val quoteRepository: QuoteRepository,
     val zoneId: ZoneId,
@@ -66,15 +57,9 @@ class SymbolDetailViewModel @Inject constructor(
 
     val uiState: StateFlow<SymbolDetailUiState> = combine(
         quoteRepository.observeQuote(symbol),
-        portfolioRepository.observePositions(),
-        quoteRepository.observeConverter(),
         settingsRepository.preferences,
         chart,
-    ) { quote, positions, converter, preferences, chartState ->
-        val lots = positions.filter { it.symbol.equals(symbol, ignoreCase = true) }
-        val valuation = PortfolioCalculator.aggregate(lots).firstOrNull()
-            ?.let { PortfolioCalculator.value(it, quote, converter) }
-
+    ) { quote, preferences, chartState ->
         SymbolDetailUiState(
             symbol = symbol,
             quote = quote,
@@ -83,8 +68,6 @@ class SymbolDetailViewModel @Inject constructor(
             seriesFetchedAt = chartState.fetchedAt,
             isLoadingChart = chartState.isLoading,
             chartUnavailable = chartState.unavailable,
-            lots = lots,
-            valuation = valuation,
             privacyMode = preferences.privacyMode,
         )
     }.stateIn(

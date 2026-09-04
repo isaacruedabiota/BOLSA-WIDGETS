@@ -340,6 +340,20 @@ Decisiones que se tomaron por el camino:
 - Migración real de Room (2 → 3, dos columnas nullable) y dos columnas nuevas al final del
   CSV. Un archivo exportado antes de esto se sigue restaurando: lo que falta es "sin plan".
 
+**Fuera la cartera**. Se retira de la app entera: la pestaña, el editor de posiciones,
+"repetir compra", la tarjeta "Tu posición" del detalle, el widget de cartera y el origen
+"cartera" del mapa de calor. Lo que el usuario lleva es un plan de aportaciones, no
+posiciones, y una pantalla que no puede tener datos es peor que no tenerla.
+
+Lo que **no** se ha borrado, a propósito: `Position`, su tabla de Room, `PortfolioCalculator`
+y las filas `posicion` del CSV. Nada de lo ya guardado se destruye, una copia de seguridad
+antigua se sigue restaurando entera y volver atrás sería recuperar la UI, no los datos. Es
+código sin consumidores hasta que se diga lo contrario.
+
+Efecto colateral pendiente de decidir: el **modo privacidad** ocultaba importes en euros, y
+todos los sitios donde lo hacía eran de cartera. Ahora mismo es un interruptor que no oculta
+nada.
+
 ---
 
 ## Criterios de aceptación v1

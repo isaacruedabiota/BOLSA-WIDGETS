@@ -36,7 +36,6 @@ sealed interface UiMessage {
 
     data object BackupImportEmpty : UiMessage
 
-    data class PurchaseAdded(val symbol: String) : UiMessage
 
     companion object {
         /** Turns a refresh result into the message that describes it honestly. */
@@ -71,7 +70,6 @@ fun UiMessage.text(): String = when (this) {
     )
     UiMessage.BackupImportFailed -> stringResource(R.string.backup_import_failed)
     UiMessage.BackupImportEmpty -> stringResource(R.string.backup_import_empty)
-    is UiMessage.PurchaseAdded -> stringResource(R.string.purchase_added, symbol)
 }
 
 /** "1 posición" / "3 posiciones", for sentences that mention both counts. */

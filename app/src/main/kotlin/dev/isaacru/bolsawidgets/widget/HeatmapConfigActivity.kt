@@ -87,12 +87,12 @@ class HeatmapConfigActivity : ComponentActivity() {
     private suspend fun readStoredSource(): HeatmapSource {
         val glanceId = runCatching {
             GlanceAppWidgetManager(this).getGlanceIdBy(appWidgetId)
-        }.getOrNull() ?: return HeatmapSource.PORTFOLIO
+        }.getOrNull() ?: return HeatmapSource.WATCHLIST
         val stored = runCatching {
             val preferences = getAppWidgetState(this, PreferencesGlanceStateDefinition, glanceId)
             preferences[HeatmapWidget.KEY_SOURCE]
         }.getOrNull()
-        return HeatmapSource.entries.firstOrNull { it.name == stored } ?: HeatmapSource.PORTFOLIO
+        return HeatmapSource.entries.firstOrNull { it.name == stored } ?: HeatmapSource.WATCHLIST
     }
 
     private fun confirm(source: HeatmapSource) {
@@ -144,12 +144,6 @@ private fun HeatmapConfigScreen(
                 color = MaterialTheme.colorScheme.primary,
             )
 
-            SourceRow(
-                title = stringResource(R.string.heatmap_source_portfolio),
-                subtitle = stringResource(R.string.heatmap_source_portfolio_note),
-                selected = source == HeatmapSource.PORTFOLIO,
-                onClick = { source = HeatmapSource.PORTFOLIO },
-            )
             SourceRow(
                 title = stringResource(R.string.heatmap_source_watchlist),
                 subtitle = stringResource(R.string.heatmap_source_watchlist_note),

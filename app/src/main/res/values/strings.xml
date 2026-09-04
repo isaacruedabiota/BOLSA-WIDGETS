@@ -3,7 +3,6 @@
     <string name="app_name">Bolsa Widgets</string>
 
     <!-- Navegación -->
-    <string name="nav_portfolio">Cartera</string>
     <string name="nav_watchlist">Seguimiento</string>
     <string name="nav_settings">Ajustes</string>
 
@@ -12,8 +11,6 @@
     <string name="action_add">Añadir</string>
     <string name="action_save">Guardar</string>
     <string name="action_cancel">Cancelar</string>
-    <string name="action_delete">Eliminar</string>
-    <string name="action_edit">Editar</string>
     <string name="action_back">Volver</string>
     <string name="action_close">Cerrar</string>
     <string name="action_move_up">Subir</string>
@@ -22,49 +19,10 @@
     <string name="action_more">Más opciones</string>
     <string name="action_retry">Reintentar</string>
 
-    <!-- Cartera -->
-    <string name="portfolio_title">Cartera</string>
-    <string name="portfolio_total_value">Valor total</string>
-    <string name="portfolio_day_pnl">P&amp;L del día</string>
-    <string name="portfolio_total_pnl">P&amp;L total</string>
-    <string name="portfolio_cost_basis">Invertido</string>
-    <string name="portfolio_last_update">Actualizado: %1$s</string>
-    <string name="portfolio_never_updated">Sin actualizar todavía</string>
-    <string name="portfolio_empty_title">Aún no tienes posiciones</string>
-    <string name="portfolio_empty_body">Añade tu primera compra para ver el valor y el P&amp;L de tu cartera en euros.</string>
-    <string name="portfolio_add_position">Añadir posición</string>
-    <string name="portfolio_unpriced_warning">Sin cotización para %1$s. Se cuenta a precio de coste y no suma P&amp;L.</string>
-    <string name="portfolio_average_price">Precio medio %1$s</string>
-    <string name="portfolio_quantity">%1$s títulos</string>
-    <string name="portfolio_weight">%1$s de la cartera</string>
-
-    <!-- Editor de posición -->
-    <string name="editor_title_new">Nueva posición</string>
-    <string name="editor_title_edit">Editar posición</string>
-    <string name="editor_symbol">Símbolo</string>
-    <string name="editor_symbol_helper">Busca el valor o escribe el ticker exacto (p. ej. SAN.MC)</string>
-    <string name="editor_search_symbol">Buscar símbolo</string>
-    <string name="editor_name">Nombre</string>
-    <string name="editor_exchange">Mercado</string>
-    <string name="editor_quantity">Cantidad</string>
-    <string name="editor_buy_price">Precio medio de compra</string>
-    <string name="editor_currency">Divisa</string>
-    <string name="editor_currency_auto">Del símbolo</string>
-    <string name="editor_purchase_date">Fecha de compra</string>
-    <string name="editor_notes">Notas</string>
-    <string name="editor_error_symbol">Indica un símbolo</string>
-    <string name="editor_error_symbol_unknown">No se ha podido cotizar este símbolo</string>
-    <string name="editor_error_quantity">La cantidad debe ser un número mayor que cero</string>
-    <string name="editor_error_price">El precio debe ser un número mayor o igual que cero</string>
-    <string name="editor_delete_title">¿Eliminar esta posición?</string>
-    <string name="editor_delete_body">Se borra solo esta compra. Las demás del mismo valor se mantienen.</string>
-    <string name="editor_verifying">Comprobando el símbolo…</string>
-    <string name="editor_verified">Cotiza a %1$s</string>
-
     <!-- Seguimiento -->
     <string name="watchlist_title">Seguimiento</string>
     <string name="watchlist_empty_title">Tu lista está vacía</string>
-    <string name="watchlist_empty_body">Añade los valores que quieras vigilar sin tenerlos en cartera.</string>
+    <string name="watchlist_empty_body">Añade los valores que quieras vigilar y, si aportas a alguno, cuánto metes cada mes.</string>
     <string name="watchlist_add">Añadir valor</string>
     <string name="watchlist_no_price">Sin precio todavía</string>
     <string name="watchlist_removed">%1$s quitado del seguimiento</string>
@@ -104,28 +62,15 @@
     <string name="refresh_nothing">Nada que actualizar</string>
 
     <!-- Detalle de valor -->
+    <string name="detail_last_update">Actualizado: %1$s</string>
     <string name="detail_no_quote">Sin cotización todavía para este valor.</string>
-    <string name="detail_not_held">No tienes posiciones en este valor.</string>
     <string name="detail_chart_unavailable">No hay gráfico disponible para este rango.</string>
-    <string name="detail_your_position">Tu posición</string>
     <string name="detail_range_low">Mín %1$s</string>
     <string name="detail_range_high">Máx %1$s</string>
-    <string name="action_detail">Ver detalle</string>
-    <string name="action_repeat_purchase">Repetir compra</string>
-
-    <!-- Repetir la compra mensual de un plan de inversión -->
-    <string name="repeat_title">Repetir compra en %1$s</string>
-    <string name="repeat_body">En un plan de inversión lo que se repite es el importe: los títulos salen del precio de este mes.</string>
-    <string name="repeat_amount">Importe (%1$s)</string>
-    <string name="repeat_price">Precio por título</string>
-    <string name="repeat_quantity">Compras %1$s títulos</string>
-    <string name="repeat_invalid">Revisa el importe y el precio</string>
-    <string name="repeat_confirm">Añadir compra</string>
-    <string name="purchase_added">Compra añadida a %1$s</string>
 
     <!-- Copia de seguridad -->
     <string name="settings_backup_header">Copia de seguridad</string>
-    <string name="settings_backup_body">Un único CSV con tu cartera y tu lista de seguimiento.</string>
+    <string name="settings_backup_body">Un único CSV con tu lista de seguimiento y tus aportaciones.</string>
     <string name="settings_export">Exportar a CSV</string>
     <string name="settings_import">Importar desde CSV</string>
     <string name="backup_export_done">Exportado: %1$s y %2$s</string>
@@ -153,16 +98,9 @@
     <!-- Widgets -->
     <string name="widget_watchlist_label">Seguimiento</string>
     <string name="widget_watchlist_description">Tus valores seguidos con la variación del día.</string>
-    <string name="widget_portfolio_label">Cartera</string>
-    <string name="widget_portfolio_description">Valor total y P&amp;L de tu cartera en euros.</string>
     <string name="widget_empty_watchlist">Añade valores desde la app</string>
-    <string name="widget_empty_portfolio">Añade posiciones desde la app</string>
     <string name="widget_no_price">Sin precio</string>
     <string name="widget_refresh">Actualizar</string>
-    <string name="widget_updated">Act. %1$s</string>
-    <string name="widget_never">Sin datos todavía</string>
-    <string name="widget_day">Día</string>
-    <string name="widget_total">Total</string>
 
     <string name="widget_sparkline_label">Valor con gráfico</string>
     <string name="widget_sparkline_description">Un valor con su precio y un mini-gráfico.</string>
@@ -173,13 +111,10 @@
     <string name="widget_empty_plan">Pon tus aportaciones desde la app</string>
     <string name="heatmap_source_plan">Tu plan de aportaciones</string>
     <string name="heatmap_source_plan_note">El tamaño de cada celda es lo que metes al mes en ese valor. Solo salen los valores con aportación.</string>
-    <string name="widget_heatmap_label_watchlist">Mapa de calor · seguimiento</string>
     <string name="heatmap_config_header">Qué muestra el mapa</string>
-    <string name="heatmap_source_portfolio">Tu cartera</string>
-    <string name="heatmap_source_portfolio_note">El tamaño de cada celda es lo que vale tu posición. Necesita posiciones con cantidad.</string>
     <string name="heatmap_source_watchlist">Tu lista de seguimiento</string>
     <string name="heatmap_source_watchlist_note">El tamaño de cada celda es el precio de un título, en euros. No hace falta tener los valores.</string>
-    <string name="widget_heatmap_description">Tus posiciones por peso y variación del día.</string>
+    <string name="widget_heatmap_description">Tus valores por tamaño y variación del día.</string>
 
     <!-- Configuración del widget de sparkline -->
     <string name="widget_config_title">Configurar widget</string>
@@ -196,10 +131,6 @@
     <plurals name="count_watchlist">
         <item quantity="one">%d valor</item>
         <item quantity="other">%d valores</item>
-    </plurals>
-    <plurals name="count_lots">
-        <item quantity="one">%d compra</item>
-        <item quantity="other">%d compras</item>
     </plurals>
     <plurals name="backup_import_skipped">
         <item quantity="one">Se ignorará %d fila ilegible.</item>

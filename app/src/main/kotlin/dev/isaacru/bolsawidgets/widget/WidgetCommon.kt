@@ -61,10 +61,11 @@ fun symbolIntent(context: Context, symbol: String): Intent =
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
     }
 
-fun openPortfolioIntent(context: Context): Intent =
+/** Opens the app on the watchlist, which is where a map tap has nowhere better to go. */
+fun openWatchlistIntent(context: Context): Intent =
     Intent(context, MainActivity::class.java).apply {
         action = Intent.ACTION_VIEW
-        data = Uri.parse(DEEP_LINK_SCHEME + "://portfolio")
+        data = Uri.parse(DEEP_LINK_SCHEME + "://watchlist")
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
     }
 

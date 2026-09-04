@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -28,20 +27,17 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dev.isaacru.bolsawidgets.R
 import dev.isaacru.bolsawidgets.ui.detail.SymbolDetailScreen
-import dev.isaacru.bolsawidgets.ui.portfolio.PortfolioScreen
-import dev.isaacru.bolsawidgets.ui.portfolio.PositionEditorScreen
 import dev.isaacru.bolsawidgets.ui.settings.SettingsScreen
 import dev.isaacru.bolsawidgets.ui.watchlist.WatchlistScreen
 import kotlin.reflect.KClass
 
-/** The three tabs of the bottom bar, in order. */
+/** The two tabs of the bottom bar, in order. */
 private enum class TopLevelTab(
     val route: Any,
     val routeClass: KClass<*>,
     val labelRes: Int,
     val icon: ImageVector,
 ) {
-    PORTFOLIO(PortfolioRoute, PortfolioRoute::class, R.string.nav_portfolio, Icons.Filled.PieChart),
     WATCHLIST(WatchlistRoute, WatchlistRoute::class, R.string.nav_watchlist, Icons.AutoMirrored.Filled.List),
     SETTINGS(SettingsRoute, SettingsRoute::class, R.string.nav_settings, Icons.Filled.Settings),
 }
@@ -82,17 +78,9 @@ fun BolsaApp(
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = PortfolioRoute,
+            startDestination = WatchlistRoute,
             modifier = Modifier.fillMaxSize(),
         ) {
-            composable<PortfolioRoute> {
-                PortfolioScreen(
-                    onAddPosition = { navController.navigate(PositionEditorRoute()) },
-                    onEditPosition = { id -> navController.navigate(PositionEditorRoute(id)) },
-                    onOpenSymbol = { symbol -> navController.navigate(SymbolDetailRoute(symbol)) },
-                    modifier = Modifier.padding(innerPadding),
-                )
-            }
             composable<WatchlistRoute> {
                 WatchlistScreen(
                     onOpenSymbol = { symbol -> navController.navigate(SymbolDetailRoute(symbol)) },
@@ -101,9 +89,6 @@ fun BolsaApp(
             }
             composable<SettingsRoute> {
                 SettingsScreen(modifier = Modifier.padding(innerPadding))
-            }
-            composable<PositionEditorRoute> {
-                PositionEditorScreen(onDone = { navController.popBackStack() })
             }
             composable<SymbolDetailRoute> {
                 SymbolDetailScreen(onBack = { navController.popBackStack() })
