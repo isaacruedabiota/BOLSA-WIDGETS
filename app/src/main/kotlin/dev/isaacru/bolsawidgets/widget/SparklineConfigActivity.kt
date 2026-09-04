@@ -32,6 +32,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.GlanceAppWidgetManager
+import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.lifecycle.lifecycleScope
@@ -39,10 +40,12 @@ import dagger.hilt.android.AndroidEntryPoint
 import dev.isaacru.bolsawidgets.R
 import dev.isaacru.bolsawidgets.domain.model.ChartRange
 import dev.isaacru.bolsawidgets.domain.model.Quote
+import dev.isaacru.bolsawidgets.domain.repository.QuoteRepository
 import dev.isaacru.bolsawidgets.ui.common.Format
 import dev.isaacru.bolsawidgets.ui.search.SymbolSearchSheet
 import dev.isaacru.bolsawidgets.ui.theme.BolsaWidgetsTheme
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * Placement-time configuration for [SparklineWidget]: which ticker, which range.
@@ -53,7 +56,19 @@ import kotlinx.coroutines.launch
 @AndroidEntryPoint
 class SparklineConfigActivity : ComponentActivity() {
 
+    @Inject
+    lateinit var quoteRepository: QuoteRepository
+
     private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
+
+    private var stored by mutableStateOf<StoredConfig?>(null)
+
+    /** What the widget is showing right now, or the defaults when it is a new one. */
+    private data class StoredConfig(
+        val symbol: String?,
+        val quote: Quote?,
+        val range: ChartRange,
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,14 +84,44 @@ class SparklineConfigActivity : ComponentActivity() {
             return
         }
 
+        lifecycleScope.launch { stored = readStoredConfig() }
+
         setContent {
             BolsaWidgetsTheme {
-                SparklineConfigScreen(
-                    onConfirm = ::confirm,
-                    onCancel = { finish() },
-                )
+                // Reopened by the launcher to reconfigure a widget already on screen, so
+                // the screen waits for its current ticker and range instead of coming up
+                // empty and asking for them again.
+                stored?.let { current ->
+                    SparklineConfigScreen(
+                        initialSymbol = current.symbol,
+                        initialQuote = current.quote,
+                        initialRange = current.range,
+                        onConfirm = ::confirm,
+                        onCancel = { finish() },
+                    )
+                }
             }
         }
+    }
+
+    private suspend fun readStoredConfig(): StoredConfig {
+        val empty = StoredConfig(symbol = null, quote = null, range = ChartRange.DAY)
+        val glanceId = runCatching {
+            GlanceAppWidgetManager(this).getGlanceIdBy(appWidgetId)
+        }.getOrNull() ?: return empty
+        val preferences = runCatching {
+            getAppWidgetState(this, PreferencesGlanceStateDefinition, glanceId)
+        }.getOrNull() ?: return empty
+
+        val symbol = preferences[SparklineWidget.KEY_SYMBOL] ?: return empty
+        val range = ChartRange.entries
+            .firstOrNull { it.name == preferences[SparklineWidget.KEY_RANGE] }
+            ?: ChartRange.DAY
+        // From the cache only: reconfiguring must not depend on the network.
+        val quote = runCatching {
+            quoteRepository.getCachedQuotes(listOf(symbol))[symbol.uppercase()]
+        }.getOrNull()
+        return StoredConfig(symbol = symbol, quote = quote, range = range)
     }
 
     private fun confirm(symbol: String, range: ChartRange) {
@@ -107,13 +152,18 @@ class SparklineConfigActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SparklineConfigScreen(
+    initialSymbol: String?,
+    initialQuote: Quote?,
+    initialRange: ChartRange,
     onConfirm: (String, ChartRange) -> Unit,
     onCancel: () -> Unit,
 ) {
-    var chosen by remember { mutableStateOf<Quote?>(null) }
-    var range by remember { mutableStateOf(ChartRange.DAY) }
+    var chosen by remember { mutableStateOf(initialQuote) }
+    var range by remember { mutableStateOf(initialRange) }
     var showSearch by remember { mutableStateOf(false) }
-    val symbol = chosen?.symbol
+    // The ticker survives an empty quote cache: reconfiguring the range of a widget must
+    // not make it forget which value it was showing.
+    val symbol = chosen?.symbol ?: initialSymbol
 
     Scaffold(
         topBar = { TopAppBar(title = { Text(stringResource(R.string.widget_config_title)) }) },
@@ -132,7 +182,7 @@ private fun SparklineConfigScreen(
             )
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(14.dp)) {
-                    if (chosen == null) {
+                    if (symbol == null) {
                         Text(
                             text = stringResource(R.string.widget_config_no_symbol),
                             style = MaterialTheme.typography.bodyMedium,
@@ -144,14 +194,17 @@ private fun SparklineConfigScreen(
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
                         )
-                        Text(
-                            text = listOfNotNull(
-                                chosen?.shortName,
-                                chosen?.let { Format.price(it.price, it.currency) },
-                            ).joinToString(" · "),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                        val detail = listOfNotNull(
+                            chosen?.shortName,
+                            chosen?.let { Format.price(it.price, it.currency) },
+                        ).joinToString(" · ")
+                        if (detail.isNotEmpty()) {
+                            Text(
+                                text = detail,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                     TextButton(onClick = { showSearch = true }) {
                         Text(stringResource(R.string.widget_config_pick))
@@ -187,7 +240,7 @@ private fun SparklineConfigScreen(
                     enabled = symbol != null,
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text(stringResource(R.string.widget_config_save))
+                    Text(stringResource(R.string.action_save))
                 }
             }
         }

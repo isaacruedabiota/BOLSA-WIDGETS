@@ -288,6 +288,18 @@ de miles, así que "2.450,00" no se podía volver a parsear y el botón salía d
 Ahora hay `Format.editable` para los números que van a un campo editable, con un test que
 comprueba el ida y vuelta.
 
+**Origen del mapa de calor**. El mapa puede dibujarse desde la cartera (el área de cada
+celda es su peso) o desde la lista de seguimiento (todas las celdas iguales, solo importa
+el color). Es una elección por instancia de widget, no una mezcla: en cuanto conviven
+celdas ponderadas con celdas de tamaño fijo, el área deja de significar nada. Se elige en
+una pantalla de configuración, como el sparkline, y el widget se declara `reconfigurable`.
+
+Corregido al validarlo: las dos pantallas de configuración se reabren desde el lápiz del
+lanzador para reconfigurar un widget ya colocado, y ninguna leía el estado actual —
+proponían los valores por defecto, así que "Guardar" cambiaba la configuración sin
+querer. Ahora ambas esperan a leer el estado del widget antes de dibujarse, y el botón
+dice "Guardar" en vez de "Añadir widget", que solo era cierto la primera vez.
+
 ---
 
 ## Criterios de aceptación v1

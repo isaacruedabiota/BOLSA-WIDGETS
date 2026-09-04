@@ -157,6 +157,12 @@
     <string name="widget_sparkline_unconfigured">Sin valor configurado</string>
     <string name="widget_sparkline_no_series">Sin gráfico todavía</string>
     <string name="widget_heatmap_label">Mapa de calor</string>
+    <string name="widget_heatmap_label_watchlist">Mapa de calor · seguimiento</string>
+    <string name="heatmap_config_header">Qué muestra el mapa</string>
+    <string name="heatmap_source_portfolio">Tu cartera</string>
+    <string name="heatmap_source_portfolio_note">El tamaño de cada celda es su peso en la cartera. Necesita posiciones con cantidad.</string>
+    <string name="heatmap_source_watchlist">Tu lista de seguimiento</string>
+    <string name="heatmap_source_watchlist_note">Todas las celdas del mismo tamaño: solo importa el color. No hace falta tener los valores.</string>
     <string name="widget_heatmap_description">Tus posiciones por peso y variación del día.</string>
 
     <!-- Configuración del widget de sparkline -->
@@ -165,7 +171,6 @@
     <string name="widget_config_no_symbol">Ningún valor elegido todavía.</string>
     <string name="widget_config_pick">Elegir valor</string>
     <string name="widget_config_range">Rango del gráfico</string>
-    <string name="widget_config_save">Añadir widget</string>
 
     <!-- Cantidades: el castellano concuerda en singular, y "1 valores" canta mucho. -->
     <plurals name="count_positions">

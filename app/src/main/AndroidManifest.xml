@@ -72,7 +72,17 @@
                 android:resource="@xml/heatmap_widget_info" />
         </receiver>
 
-        <!-- Started by the launcher before the sparkline widget is placed, so exported. -->
+        <!-- Started by the launcher before the widget is placed, so exported. -->
+        <activity
+            android:name=".widget.HeatmapConfigActivity"
+            android:exported="true"
+            android:label="@string/widget_config_title"
+            android:theme="@style/Theme.BolsaWidgets">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
         <activity
             android:name=".widget.SparklineConfigActivity"
             android:exported="true"
