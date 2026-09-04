@@ -434,6 +434,19 @@ dinámicos en Android 12+—; lo que faltaba era poder forzarlo. Ahora hay Autom
 porque `BolsaWidgetsTheme` lo usan también las pantallas de configuración de los widgets y
 esas no tienen por qué leer preferencias.
 
+**Ver el valor antes de añadirlo**. Tocar una sugerencia ya no lo mete en la lista: abre una
+ficha dentro de la misma hoja con el nombre, el ticker y la plaza, el precio grande, lo que
+lleva hecho **hoy** en euros y en porcentaje, el gráfico de la sesión con la línea del cierre
+anterior de referencia, y el mínimo, el máximo y ese cierre debajo. Dos botones: Volver y
+Añadir.
+
+Coste: cero llamadas extra hasta el gráfico. La cotización que resuelve el símbolo es la que
+el alta directa ya hacía —y la que garantiza que nada entra en Room sin cotizar—; el gráfico
+es una petición más, cache-first a 15 minutos, y solo porque alguien ha tocado para mirar.
+
+`PriceChart` se mueve de `ui/detail` a `ui/common`, que es donde vive lo que comparten dos
+pantallas.
+
 ---
 
 ## Criterios de aceptación v1

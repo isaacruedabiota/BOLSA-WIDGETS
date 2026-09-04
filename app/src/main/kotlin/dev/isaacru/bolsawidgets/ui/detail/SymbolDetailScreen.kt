@@ -41,6 +41,7 @@ import dev.isaacru.bolsawidgets.domain.model.ChartRange
 import dev.isaacru.bolsawidgets.domain.model.PositionValuation
 import dev.isaacru.bolsawidgets.ui.common.ChangeIndicator
 import dev.isaacru.bolsawidgets.ui.common.Format
+import dev.isaacru.bolsawidgets.ui.common.PriceChart
 import dev.isaacru.bolsawidgets.ui.common.changeColor
 
 @OptIn(ExperimentalMaterial3Api::class)

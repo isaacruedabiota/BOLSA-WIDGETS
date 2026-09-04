@@ -3,6 +3,8 @@ package dev.isaacru.bolsawidgets.ui.search
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.isaacru.bolsawidgets.domain.model.Candle
+import dev.isaacru.bolsawidgets.domain.model.ChartRange
 import dev.isaacru.bolsawidgets.domain.model.Quote
 import dev.isaacru.bolsawidgets.domain.repository.QuoteRepository
 import dev.isaacru.bolsawidgets.domain.market.Market
@@ -39,6 +41,7 @@ data class SymbolSearchUiState(
     val suggestionsUnavailable: Boolean = false,
     val resolvingSymbol: String? = null,
     val failedSymbol: String? = null,
+    val preview: SymbolPreview? = null,
     val filter: SymbolFilter = SymbolFilter.None,
     val availableKinds: List<SymbolKind> = emptyList(),
     val availableMarkets: List<Market> = emptyList(),
@@ -59,6 +62,19 @@ data class SymbolSearchUiState(
 }
 
 /**
+ * A value being looked at before it is taken.
+ *
+ * The quote is already resolved, which is the same call adding it used to make: the price
+ * and the day's move come for free with it. The chart is one more request, and it is only
+ * made because someone tapped a row to look.
+ */
+data class SymbolPreview(
+    val quote: Quote,
+    val candles: List<Candle> = emptyList(),
+    val isLoadingChart: Boolean = false,
+)
+
+/**
  * Drives the symbol picker shared by Seguimiento and the sparkline widget's setup.
  *
  * Nothing leaves this screen without a successful quote call: suggestions are resolved
@@ -73,6 +89,7 @@ class SymbolSearchViewModel @Inject constructor(
     private val query = MutableStateFlow("")
     private val resolution = MutableStateFlow(ResolutionState())
     private val filter = MutableStateFlow(SymbolFilter.None)
+    private val preview = MutableStateFlow<SymbolPreview?>(null)
 
     private val chosenChannel = Channel<Quote>(Channel.BUFFERED)
 
@@ -97,7 +114,13 @@ class SymbolSearchViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(SUBSCRIPTION_TIMEOUT), SearchState())
 
     val uiState: StateFlow<SymbolSearchUiState> =
-        combine(query, searchResults, resolution, filter) { text, results, resolving, selected ->
+        combine(
+            query,
+            searchResults,
+            resolution,
+            filter,
+            preview,
+        ) { text, results, resolving, selected, previewed ->
             val all = results.outcome.suggestions
             // Pruned against the results in hand, so a chip never survives into a search
             // that has nothing behind it.
@@ -110,6 +133,7 @@ class SymbolSearchViewModel @Inject constructor(
                 suggestionsUnavailable = results.outcome.suggestionsUnavailable,
                 resolvingSymbol = resolving.inFlight,
                 failedSymbol = resolving.failed,
+                preview = previewed,
                 filter = effective,
                 availableKinds = SymbolFilters.kindsIn(all),
                 availableMarkets = SymbolFilters.marketsIn(all),
@@ -125,6 +149,7 @@ class SymbolSearchViewModel @Inject constructor(
         query.value = ""
         resolution.value = ResolutionState()
         filter.value = SymbolFilter.None
+        preview.value = null
     }
 
     /** Tapping the selected chip again clears it, which is how a chip row is expected to work. */
@@ -145,20 +170,54 @@ class SymbolSearchViewModel @Inject constructor(
         resolution.update { it.copy(failed = null) }
     }
 
-    /** Verifies [symbol] and, if it prices, emits it through [chosen]. */
-    fun choose(symbol: String) {
+    /**
+     * Verifies [symbol] and, if it prices, opens it for a look rather than taking it.
+     *
+     * The resolve call is the one the old "tap to add" already made, so looking first
+     * costs nothing extra until the chart is asked for.
+     */
+    fun open(symbol: String) {
         if (resolution.value.inFlight != null) return
         viewModelScope.launch {
             resolution.value = ResolutionState(inFlight = symbol)
             val quote = runCatching { quoteRepository.resolveSymbol(symbol) }.getOrNull()
             resolution.value = ResolutionState(failed = if (quote == null) symbol else null)
-            if (quote != null) chosenChannel.send(quote)
+            if (quote != null) show(quote)
         }
     }
 
     /** An already verified exact match skips the second round trip. */
-    fun chooseVerified(quote: Quote) {
+    fun openVerified(quote: Quote) {
+        show(quote)
+    }
+
+    /** Takes the value being looked at. */
+    fun confirm() {
+        val quote = preview.value?.quote ?: return
         viewModelScope.launch { chosenChannel.send(quote) }
+    }
+
+    fun closePreview() {
+        preview.value = null
+    }
+
+    private fun show(quote: Quote) {
+        preview.value = SymbolPreview(quote = quote, isLoadingChart = true)
+        viewModelScope.launch {
+            // The day's session, cache first: two taps on the same row in a row are one
+            // request, not two.
+            val series = runCatching {
+                quoteRepository.getCandleSeries(quote.symbol, ChartRange.DAY, CHART_MAX_AGE)
+            }.getOrNull()
+            preview.update { current ->
+                // Ignored if the user has already gone back or opened something else.
+                if (current?.quote?.symbol != quote.symbol) {
+                    current
+                } else {
+                    current.copy(candles = series?.candles.orEmpty(), isLoadingChart = false)
+                }
+            }
+        }
     }
 
     private data class SearchState(
@@ -172,6 +231,9 @@ class SymbolSearchViewModel @Inject constructor(
     )
 
     private companion object {
+        /** The session's own chart; a second look inside this window redraws the cache. */
+        val CHART_MAX_AGE: java.time.Duration = java.time.Duration.ofMinutes(15)
+
         // Short enough that the list feels like it is following the typing, long
         // enough that a word costs one request rather than one per letter.
         const val DEBOUNCE_MILLIS = 220L

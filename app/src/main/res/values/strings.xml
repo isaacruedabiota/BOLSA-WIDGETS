@@ -47,6 +47,10 @@
     <!-- Buscador de símbolos -->
     <string name="search_placeholder">Nombre o ticker: Inditex, ITX.MC, iShares…</string>
     <string name="search_clear">Borrar</string>
+    <string name="search_preview_today">Hoy, frente al cierre anterior</string>
+    <string name="search_preview_previous_close">Cierre ant. %1$s</string>
+    <string name="search_preview_back">Volver</string>
+    <string name="search_preview_add">Añadir</string>
     <string name="search_no_results_filtered">Ningún resultado con esos filtros. Toca el filtro otra vez para quitarlo.</string>
 
     <!-- Filtros de la búsqueda: tipo de instrumento y plaza -->

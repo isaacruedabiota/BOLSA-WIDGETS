@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -15,9 +16,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -28,6 +31,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -53,6 +57,9 @@ import dev.isaacru.bolsawidgets.domain.search.SymbolKind
 import dev.isaacru.bolsawidgets.domain.search.SymbolSuggestion
 import dev.isaacru.bolsawidgets.ui.common.ChangeIndicator
 import dev.isaacru.bolsawidgets.ui.common.Format
+import dev.isaacru.bolsawidgets.ui.common.PriceChart
+import dev.isaacru.bolsawidgets.ui.common.SymbolMonogram
+import dev.isaacru.bolsawidgets.ui.common.changeColor
 import dev.isaacru.bolsawidgets.ui.theme.Gain
 
 /**
@@ -86,6 +93,17 @@ fun SymbolSearchSheet(
     }
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        // One thing at a time: looking at a value replaces the list rather than pushing it
+        // off the bottom of a sheet that is already sharing the screen with a keyboard.
+        state.preview?.let { preview ->
+            SymbolPreviewPanel(
+                preview = preview,
+                onBack = viewModel::closePreview,
+                onConfirm = viewModel::confirm,
+            )
+            return@ModalBottomSheet
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -109,7 +127,7 @@ fun SymbolSearchSheet(
                 // Not forced to upper case any more: this field takes company names as
                 // readily as tickers, and "SANTANDER" shouting back is not a search box.
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(onSearch = { viewModel.choose(state.query) }),
+                keyboardActions = KeyboardActions(onSearch = { viewModel.open(state.query) }),
                 modifier = Modifier
                     .fillMaxWidth()
                     .focusRequester(focusRequester),
@@ -167,7 +185,7 @@ fun SymbolSearchSheet(
             LazyColumn(modifier = Modifier.heightIn(max = 420.dp)) {
                 state.exactMatch?.let { quote ->
                     item {
-                        VerifiedResultRow(quote = quote, onClick = { viewModel.chooseVerified(quote) })
+                        VerifiedResultRow(quote = quote, onClick = { viewModel.openVerified(quote) })
                         HorizontalDivider()
                     }
                 }
@@ -175,7 +193,7 @@ fun SymbolSearchSheet(
                     SuggestionRow(
                         suggestion = suggestion,
                         isResolving = state.resolvingSymbol == suggestion.symbol,
-                        onClick = { viewModel.choose(suggestion.symbol) },
+                        onClick = { viewModel.open(suggestion.symbol) },
                     )
                 }
             }
@@ -335,3 +353,160 @@ private fun Market.labelRes(): Int = when (this) {
     Market.LONDON -> R.string.market_london
     Market.UNKNOWN -> R.string.market_other
 }
+
+
+/**
+ * The value before it is taken: what it costs, what it has done today, and its session.
+ *
+ * Looking first is the whole point of this panel, so the day's move is the biggest thing
+ * on it and the chart underneath is the session the market is having right now, not a year
+ * of history nobody is asking about at this moment.
+ */
+@Composable
+private fun SymbolPreviewPanel(
+    preview: SymbolPreview,
+    onBack: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    val quote = preview.quote
+    val closes = preview.candles.map { it.close }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .padding(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.action_back),
+                )
+            }
+            SymbolMonogram(symbol = quote.symbol, size = 36)
+            Column(modifier = Modifier.padding(start = 12.dp)) {
+                Text(
+                    text = quote.shortName ?: quote.symbol,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = listOf(quote.symbol, quote.exchange.orEmpty())
+                        .filter { it.isNotBlank() }
+                        .joinToString(" · "),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                )
+            }
+        }
+
+        Column {
+            Text(
+                text = Format.price(quote.price, quote.currency),
+                style = MaterialTheme.typography.headlineMedium,
+            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = Format.signedMoney(quote.change, quote.currency),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = changeColor(quote.change),
+                    fontWeight = FontWeight.Medium,
+                )
+                ChangeIndicator(
+                    percent = quote.changePercent,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+            Text(
+                text = stringResource(R.string.search_preview_today),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        when {
+            preview.isLoadingChart -> Row(
+                modifier = Modifier.fillMaxWidth().height(CHART_HEIGHT.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+            }
+
+            // Checked against the data, not a flag: two points are the least a line needs.
+            closes.size < 2 -> Row(
+                modifier = Modifier.fillMaxWidth().height(CHART_HEIGHT.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(R.string.detail_chart_unavailable),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            else -> {
+                PriceChart(
+                    candles = preview.candles,
+                    lineColor = changeColor(quote.change),
+                    // The line the day is measured against, which is what makes the shape
+                    // mean something instead of just wiggling.
+                    baseline = quote.previousClose.takeIf { it > 0.0 },
+                    modifier = Modifier.fillMaxWidth().height(CHART_HEIGHT.dp),
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(
+                        text = stringResource(
+                            R.string.detail_range_low,
+                            Format.price(closes.min(), quote.currency),
+                        ),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = stringResource(
+                            R.string.detail_range_high,
+                            Format.price(closes.max(), quote.currency),
+                        ),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = stringResource(
+                            R.string.search_preview_previous_close,
+                            Format.price(quote.previousClose, quote.currency),
+                        ),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            OutlinedButton(onClick = onBack, modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.search_preview_back))
+            }
+            Button(onClick = onConfirm, modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.search_preview_add))
+            }
+        }
+    }
+}
+
+private const val CHART_HEIGHT = 170

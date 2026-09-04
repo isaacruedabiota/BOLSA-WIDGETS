@@ -1,4 +1,4 @@
-package dev.isaacru.bolsawidgets.ui.detail
+package dev.isaacru.bolsawidgets.ui.common
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
