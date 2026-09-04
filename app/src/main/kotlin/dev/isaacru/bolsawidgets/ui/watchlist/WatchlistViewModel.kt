@@ -77,6 +77,11 @@ class WatchlistViewModel @Inject constructor(
         }
     }
 
+    /** Stars or unstars a value; the Explorar tab lists the starred ones first. */
+    fun toggleFavorite(symbol: String, favorite: Boolean) {
+        viewModelScope.launch { watchlistRepository.setFavorite(symbol, favorite) }
+    }
+
     fun moveUp(symbol: String) = move(symbol, -1)
 
     fun moveDown(symbol: String) = move(symbol, 1)

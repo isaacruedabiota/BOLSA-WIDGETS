@@ -47,6 +47,7 @@ fun WatchlistItemEntity.toDomain() = WatchlistItem(
         amountEur = contributionAmount,
         period = ContributionPeriod.entries.firstOrNull { it.name == contributionPeriod },
     ),
+    isFavorite = isFavorite,
 )
 
 fun WatchlistItem.toEntity() = WatchlistItemEntity(
@@ -55,6 +56,7 @@ fun WatchlistItem.toEntity() = WatchlistItemEntity(
     sortOrder = sortOrder,
     contributionAmount = contribution?.amountEur,
     contributionPeriod = contribution?.period?.name,
+    isFavorite = isFavorite,
 )
 
 /**

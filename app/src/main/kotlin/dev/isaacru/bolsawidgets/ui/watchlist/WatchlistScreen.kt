@@ -20,7 +20,9 @@ import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -124,6 +126,9 @@ fun WatchlistScreen(
                         onMoveDown = { viewModel.moveDown(row.symbol) },
                         onRemove = { viewModel.remove(row.symbol) },
                         onEditContribution = { editingContribution = row },
+                        onToggleFavorite = {
+                            viewModel.toggleFavorite(row.symbol, !row.item.isFavorite)
+                        },
                     )
                 }
             }
@@ -161,6 +166,7 @@ private fun WatchlistCard(
     onMoveDown: () -> Unit,
     onRemove: () -> Unit,
     onEditContribution: () -> Unit,
+    onToggleFavorite: () -> Unit,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     val quote = row.quote
@@ -174,11 +180,24 @@ private fun WatchlistCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = row.symbol,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Text(
+                        text = row.symbol,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    if (row.item.isFavorite) {
+                        Icon(
+                            imageVector = Icons.Filled.Star,
+                            contentDescription = stringResource(R.string.watchlist_favorite),
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp),
+                        )
+                    }
+                }
                 Text(
                     text = row.displayName,
                     style = MaterialTheme.typography.bodySmall,
@@ -224,6 +243,33 @@ private fun WatchlistCard(
                     Icon(Icons.Filled.MoreVert, stringResource(R.string.action_more))
                 }
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                stringResource(
+                                    if (row.item.isFavorite) {
+                                        R.string.action_unfavorite
+                                    } else {
+                                        R.string.action_favorite
+                                    },
+                                ),
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = if (row.item.isFavorite) {
+                                    Icons.Filled.Star
+                                } else {
+                                    Icons.Outlined.StarOutline
+                                },
+                                contentDescription = null,
+                            )
+                        },
+                        onClick = {
+                            menuOpen = false
+                            onToggleFavorite()
+                        },
+                    )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.action_contribution)) },
                         leadingIcon = { Icon(Icons.Filled.Savings, contentDescription = null) },

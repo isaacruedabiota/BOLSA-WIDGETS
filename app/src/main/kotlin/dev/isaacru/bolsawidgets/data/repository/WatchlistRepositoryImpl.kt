@@ -59,6 +59,11 @@ class WatchlistRepositoryImpl @Inject constructor(
         )
     }
 
+    override suspend fun setFavorite(symbol: String, favorite: Boolean) = withContext(io) {
+        val existing = watchlistDao.getBySymbol(symbol.trim().uppercase()) ?: return@withContext
+        watchlistDao.upsert(existing.copy(isFavorite = favorite))
+    }
+
     override suspend fun reorder(symbolsInOrder: List<String>) = withContext(io) {
         watchlistDao.replaceOrder(symbolsInOrder.map { it.trim().uppercase() })
     }

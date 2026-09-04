@@ -54,6 +54,7 @@ object PortfolioCsv {
         "orden",
         "aportacion",
         "periodo_aportacion",
+        "favorito",
     )
 
     fun export(backup: CsvBackup): String = buildString {
@@ -70,6 +71,7 @@ object PortfolioCsv {
                     position.currency,
                     position.purchaseDate.toString(),
                     position.notes,
+                    "",
                     "",
                     "",
                     "",
@@ -91,6 +93,7 @@ object PortfolioCsv {
                     item.sortOrder.toString(),
                     item.contribution?.let { decimal(it.amountEur) }.orEmpty(),
                     item.contribution?.period?.name?.lowercase().orEmpty(),
+                    if (item.isFavorite) "si" else "",
                 ),
             )
         }
@@ -158,8 +161,12 @@ object PortfolioCsv {
                 amountEur = fields.getOrNull(10).toDecimalOrNull(),
                 period = parsePeriod(fields.getOrNull(11)),
             ),
+            isFavorite = fields.getOrNull(12)?.trim()?.lowercase() in FAVORITE_WORDS,
         )
     }
+
+    /** Written as "si", but a spreadsheet may hand it back as true or 1. */
+    private val FAVORITE_WORDS = setOf("si", "sí", "true", "1", "x")
 
     private fun parsePeriod(raw: String?): ContributionPeriod? {
         val text = raw?.trim().orEmpty()

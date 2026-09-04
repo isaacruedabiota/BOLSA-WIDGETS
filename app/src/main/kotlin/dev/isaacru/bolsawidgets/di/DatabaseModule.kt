@@ -11,6 +11,7 @@ import dev.isaacru.bolsawidgets.data.local.BolsaDatabase
 import dev.isaacru.bolsawidgets.data.local.dao.CandleCacheDao
 import dev.isaacru.bolsawidgets.data.local.dao.FxRateDao
 import dev.isaacru.bolsawidgets.data.local.dao.PositionDao
+import dev.isaacru.bolsawidgets.data.local.dao.MoversDao
 import dev.isaacru.bolsawidgets.data.local.dao.QuoteCacheDao
 import dev.isaacru.bolsawidgets.data.local.dao.WatchlistDao
 import javax.inject.Singleton
@@ -23,7 +24,11 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): BolsaDatabase =
         Room.databaseBuilder(context, BolsaDatabase::class.java, BolsaDatabase.NAME)
-            .addMigrations(BolsaDatabase.MIGRATION_1_2, BolsaDatabase.MIGRATION_2_3)
+                        .addMigrations(
+                BolsaDatabase.MIGRATION_1_2,
+                BolsaDatabase.MIGRATION_2_3,
+                BolsaDatabase.MIGRATION_3_4,
+            )
             .build()
 
     @Provides
@@ -37,6 +42,9 @@ object DatabaseModule {
 
     @Provides
     fun provideFxRateDao(database: BolsaDatabase): FxRateDao = database.fxRateDao()
+
+    @Provides
+    fun provideMoversDao(database: BolsaDatabase): MoversDao = database.moversDao()
 
     @Provides
     fun provideCandleCacheDao(database: BolsaDatabase): CandleCacheDao = database.candleCacheDao()

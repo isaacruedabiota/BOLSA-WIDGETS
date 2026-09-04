@@ -9,7 +9,9 @@ import dev.isaacru.bolsawidgets.data.local.dao.FxRateDao
 import dev.isaacru.bolsawidgets.data.local.dao.PositionDao
 import dev.isaacru.bolsawidgets.data.local.dao.QuoteCacheDao
 import dev.isaacru.bolsawidgets.data.local.dao.WatchlistDao
+import dev.isaacru.bolsawidgets.data.local.dao.MoversDao
 import dev.isaacru.bolsawidgets.data.local.entity.CachedCandlesEntity
+import dev.isaacru.bolsawidgets.data.local.entity.CachedMoversEntity
 import dev.isaacru.bolsawidgets.data.local.entity.CachedQuoteEntity
 import dev.isaacru.bolsawidgets.data.local.entity.FxRateEntity
 import dev.isaacru.bolsawidgets.data.local.entity.PositionEntity
@@ -22,8 +24,9 @@ import dev.isaacru.bolsawidgets.data.local.entity.WatchlistItemEntity
         CachedQuoteEntity::class,
         FxRateEntity::class,
         CachedCandlesEntity::class,
+        CachedMoversEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 abstract class BolsaDatabase : RoomDatabase() {
@@ -37,6 +40,8 @@ abstract class BolsaDatabase : RoomDatabase() {
     abstract fun fxRateDao(): FxRateDao
 
     abstract fun candleCacheDao(): CandleCacheDao
+
+    abstract fun moversDao(): MoversDao
 
     companion object {
         const val NAME = "bolsa.db"
@@ -71,6 +76,27 @@ abstract class BolsaDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE `watchlist` ADD COLUMN `contributionAmount` REAL")
                 db.execSQL("ALTER TABLE `watchlist` ADD COLUMN `contributionPeriod` TEXT")
+            }
+        }
+
+        /**
+         * Adds the favourite flag and the cache behind the Explorar tab.
+         *
+         * The flag defaults to 0 rather than to "everything I follow is a favourite":
+         * a favourites section that starts full is a section that says nothing.
+         */
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE `watchlist` ADD COLUMN `isFavorite` INTEGER NOT NULL DEFAULT 0",
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `cached_movers` (" +
+                        "`direction` TEXT NOT NULL, " +
+                        "`payloadJson` TEXT NOT NULL, " +
+                        "`fetchedAtEpochMillis` INTEGER NOT NULL, " +
+                        "PRIMARY KEY(`direction`))",
+                )
             }
         }
     }

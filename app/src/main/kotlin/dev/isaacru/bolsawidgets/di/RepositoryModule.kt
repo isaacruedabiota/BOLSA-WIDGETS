@@ -5,6 +5,8 @@ import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import dev.isaacru.bolsawidgets.data.backup.BackupRepositoryImpl
+import dev.isaacru.bolsawidgets.data.repository.MoversRepositoryImpl
+import dev.isaacru.bolsawidgets.domain.repository.MoversRepository
 import dev.isaacru.bolsawidgets.data.prefs.SettingsRepositoryImpl
 import dev.isaacru.bolsawidgets.data.remote.yahoo.YahooSymbolSearch
 import dev.isaacru.bolsawidgets.data.repository.PortfolioRepositoryImpl
@@ -41,6 +43,10 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindSymbolSearch(impl: YahooSymbolSearch): SymbolSearch
+
+    @Binds
+    @Singleton
+    abstract fun bindMoversRepository(impl: MoversRepositoryImpl): MoversRepository
 
     @Binds
     @Singleton

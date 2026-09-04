@@ -393,6 +393,30 @@ resolverlo. El precio, la divisa y la variación llegan con la cotización, una 
 símbolo, y eso una lista no se lo puede permitir —sería exactamente lo contrario del trabajo
 de batería de la fase anterior—. Por eso se muestran para el valor verificado, que es uno.
 
+**Pestaña Explorar**. Tres cosas en una pantalla: **Favoritos** (los valores marcados con
+estrella desde Seguimiento), **los que más suben hoy** y **los que más bajan hoy**, todos
+con monograma, precio y variación, y todos abriendo su detalle al tocarlos.
+
+Lo que se comprobó contra Yahoo antes de escribir una línea, porque decidía el diseño:
+
+- El screener POST y las cotizaciones en lote (`v7/finance/quote`) devuelven
+  **401 Invalid Crumb**. No hay atajo para un ranking europeo: sería una llamada por valor.
+- Los **screeners predefinidos** (`day_gainers`, `day_losers`) sí responden 200 sin
+  autenticación, y traen nombre, precio, variación, divisa y mercado en la misma respuesta.
+  Su universo es **EE. UU.**, así que la pantalla lo dice en vez de dejar que se asuma otra
+  cosa.
+- **Ninguna API de Yahoo sirve logos.** Los monogramas —iniciales sobre un color derivado
+  del ticker— evitan una dependencia nueva, una petición de imagen por fila y un círculo en
+  blanco para todo lo que no esté en el host de turno.
+
+Disciplina de batería, que era la fase anterior y no se rompe aquí: el ranking se pide al
+abrir la pestaña **solo si su caché pasa de 15 minutos**, o cuando tocas actualizar. Nunca
+desde el worker. Medido: abrir la pestaña la primera vez son **2 peticiones**; volver a
+entrar, **cero**.
+
+Los favoritos viajan en el CSV (columna `favorito`, al final, y un archivo antiguo se sigue
+restaurando), y la migración de Room 3 → 4 añade la columna y la tabla del ranking.
+
 ---
 
 ## Criterios de aceptación v1

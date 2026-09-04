@@ -5,6 +5,7 @@ import dev.isaacru.bolsawidgets.domain.model.ContributionPeriod
 import dev.isaacru.bolsawidgets.domain.model.Position
 import dev.isaacru.bolsawidgets.domain.model.WatchlistItem
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -237,5 +238,36 @@ class PortfolioCsvTest {
         val item = PortfolioCsv.parse(broken).backup.watchlist.single()
 
         assertNull(item.contribution)
+    }
+
+    @Test
+    fun `a favourite survives the round trip`() {
+        val starred = CsvBackup(
+            positions = emptyList(),
+            watchlist = listOf(
+                WatchlistItem("ITX.MC", "Inditex", 0, isFavorite = true),
+                WatchlistItem("TEF.MC", "Telefonica", 1),
+            ),
+        )
+
+        val restored = PortfolioCsv.parse(PortfolioCsv.export(starred)).backup.watchlist
+
+        assertEquals(starred.watchlist, restored)
+        assertTrue(restored.first().isFavorite)
+        assertFalse(restored.last().isFavorite)
+    }
+
+    @Test
+    fun `a spreadsheet's idea of yes is still a yes`() {
+        val file = """
+            tipo,simbolo,nombre,mercado,cantidad,precio_medio,divisa,fecha_compra,notas,orden,aportacion,periodo_aportacion,favorito
+            seguimiento,ITX.MC,Inditex,,,,,,,0,,,TRUE
+            seguimiento,TEF.MC,Telefonica,,,,,,,1,,,
+        """.trimIndent()
+
+        val restored = PortfolioCsv.parse(file).backup.watchlist
+
+        assertTrue(restored.first().isFavorite)
+        assertFalse(restored.last().isFavorite)
     }
 }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -27,11 +28,12 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dev.isaacru.bolsawidgets.R
 import dev.isaacru.bolsawidgets.ui.detail.SymbolDetailScreen
+import dev.isaacru.bolsawidgets.ui.explore.ExploreScreen
 import dev.isaacru.bolsawidgets.ui.settings.SettingsScreen
 import dev.isaacru.bolsawidgets.ui.watchlist.WatchlistScreen
 import kotlin.reflect.KClass
 
-/** The two tabs of the bottom bar, in order. */
+/** The three tabs of the bottom bar, in order. */
 private enum class TopLevelTab(
     val route: Any,
     val routeClass: KClass<*>,
@@ -39,6 +41,7 @@ private enum class TopLevelTab(
     val icon: ImageVector,
 ) {
     WATCHLIST(WatchlistRoute, WatchlistRoute::class, R.string.nav_watchlist, Icons.AutoMirrored.Filled.List),
+    EXPLORE(ExploreRoute, ExploreRoute::class, R.string.nav_explore, Icons.Filled.TrendingUp),
     SETTINGS(SettingsRoute, SettingsRoute::class, R.string.nav_settings, Icons.Filled.Settings),
 }
 
@@ -83,6 +86,12 @@ fun BolsaApp(
         ) {
             composable<WatchlistRoute> {
                 WatchlistScreen(
+                    onOpenSymbol = { symbol -> navController.navigate(SymbolDetailRoute(symbol)) },
+                    modifier = Modifier.padding(innerPadding),
+                )
+            }
+            composable<ExploreRoute> {
+                ExploreScreen(
                     onOpenSymbol = { symbol -> navController.navigate(SymbolDetailRoute(symbol)) },
                     modifier = Modifier.padding(innerPadding),
                 )

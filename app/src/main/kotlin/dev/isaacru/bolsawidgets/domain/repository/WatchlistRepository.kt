@@ -22,6 +22,9 @@ interface WatchlistRepository {
      */
     suspend fun setContribution(symbol: String, contribution: Contribution?)
 
+    /** Stars or unstars [symbol]. A symbol that is not on the list is left alone. */
+    suspend fun setFavorite(symbol: String, favorite: Boolean)
+
     /** Persists [symbolsInOrder] as the new ordering. */
     suspend fun reorder(symbolsInOrder: List<String>)
 

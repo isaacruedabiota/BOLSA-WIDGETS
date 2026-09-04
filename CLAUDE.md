@@ -157,6 +157,12 @@ Yahoo Finance son endpoints públicos no documentados. Se asume que fallan.
   con su marca de hora. **Nunca** un mensaje de error en lugar del dato.
 - `getQuotes` no falla en bloque: los símbolos que fallan se omiten del resultado y cada uno
   conserva su valor cacheado por separado.
+- **Lo que Yahoo ya no da sin crumb**, comprobado: el screener POST (`/v1/finance/screener`)
+  y las cotizaciones en lote (`v7/finance/quote`) responden `401 Invalid Crumb`. Lo único
+  abierto para rankings son los **screeners predefinidos**
+  (`/v1/finance/screener/predefined/saved?scrIds=day_gainers|day_losers`), y su universo es
+  **EE. UU.**: no hay ranking europeo por una sola petición, y hacerlo símbolo a símbolo
+  serían 35 llamadas. Por eso la pestaña Explorar dice de qué mercado habla en pantalla.
 - El **buscador de símbolos** (`/v1/finance/search`) es un segundo endpoint no documentado y
   por tanto **opcional**: `SearchSymbolsUseCase` traga sus errores y los reporta como
   `suggestionsUnavailable`. El camino garantizado es siempre resolver el ticker exacto contra
@@ -207,6 +213,11 @@ Yahoo Finance son endpoints públicos no documentados. Se asume que fallan.
 - Los deep links de widget llevan el símbolo en la URI, nunca en un extra: los
   `PendingIntent` se deduplican con `Intent.filterEquals`, que ignora los extras, así que
   con extras todas las filas abrirían el mismo valor.
+- **No hay logos de empresa**: ninguna API de Yahoo los sirve, y traerlos de otro sitio
+  costaría una dependencia nueva, una petición de imagen por fila y un hueco en blanco para
+  todo lo que no esté en ese host. En su lugar, `Monogram` dibuja las iniciales sobre un
+  color derivado del ticker: mismo símbolo, mismo color, siempre, sin red y sin depender de
+  nadie.
 - `ui/common/Format.kt` y `ui/theme/Color.kt` son primitivas de presentación compartidas
   entre `ui` y `widget` a propósito: el formateo y la escala verde/rojo tienen que ser
   idénticos en la app y en la pantalla de inicio.
@@ -246,6 +257,9 @@ Yahoo Finance son endpoints públicos no documentados. Se asume que fallan.
     capture el precio de cierre oficial.
 - El refresco **manual** (botón de la app) ignora el horario: un toque deliberado nunca se
   ignora en silencio.
+- El **ranking de Explorar** se pide al abrir la pestaña si su caché pasa de 15 minutos, o
+  cuando el usuario toca actualizar. Nunca desde el worker: es una pantalla que alguien está
+  mirando, no algo de lo que dependa un widget. Cambiar de pestaña no cuesta una petición.
 - El worker nunca devuelve `Result.retry()`: el repositorio ya reintenta los fallos
   transitorios con backoff y el siguiente periodo está a minutos. Despertar la radio con el
   backoff de WorkManager sería gastar batería para nada.

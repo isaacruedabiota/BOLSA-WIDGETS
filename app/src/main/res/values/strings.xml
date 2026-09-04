@@ -4,7 +4,23 @@
 
     <!-- Navegación -->
     <string name="nav_watchlist">Seguimiento</string>
+    <string name="nav_explore">Explorar</string>
     <string name="nav_settings">Ajustes</string>
+
+    <!-- Explorar: favoritos y el ranking del día -->
+    <string name="explore_title">Explorar</string>
+    <string name="explore_favorites">Favoritos</string>
+    <string name="explore_favorites_note">Los valores que has marcado con la estrella.</string>
+    <string name="explore_favorites_empty">Ninguno todavía. Marca con la estrella los valores de Seguimiento que quieras tener a mano.</string>
+    <string name="explore_gainers">Los que más suben hoy</string>
+    <string name="explore_losers">Los que más bajan hoy</string>
+    <string name="explore_movers_note">Mercado estadounidense · %1$s</string>
+    <string name="explore_movers_note_empty">Mercado estadounidense. Toca actualizar para traer el ranking.</string>
+    <string name="explore_movers_failed">No se ha podido traer el ranking. Vuelve a intentarlo más tarde.</string>
+    <string name="explore_unstar">Quitar de favoritos</string>
+    <string name="action_favorite">Marcar como favorito</string>
+    <string name="action_unfavorite">Quitar de favoritos</string>
+    <string name="watchlist_favorite">Favorito</string>
 
     <!-- Acciones comunes -->
     <string name="action_refresh">Actualizar</string>

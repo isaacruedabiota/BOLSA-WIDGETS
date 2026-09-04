@@ -26,6 +26,8 @@ data class WatchlistItemEntity(
     @PrimaryKey val symbol: String,
     val name: String,
     val sortOrder: Int,
+    /** Starred by the user, which is what the Explorar tab lists first. */
+    val isFavorite: Boolean = false,
     /** Recurring amount in euros, null when the user has not planned one. */
     val contributionAmount: Double? = null,
     /** Name of a ContributionPeriod, kept as text so an unknown value degrades to null. */
@@ -68,5 +70,18 @@ data class FxRateEntity(
     /** Concatenated ISO codes, e.g. "USDEUR". */
     @PrimaryKey val pair: String,
     val rate: Double,
+    val fetchedAtEpochMillis: Long,
+)
+
+/**
+ * The day's ranking, one row per direction, stored as the JSON the screener returned
+ * shape for shape. It is a screenful of throwaway data with a timestamp: a table with a
+ * column per field would buy nothing and cost a migration every time Yahoo adds one.
+ */
+@Entity(tableName = "cached_movers")
+data class CachedMoversEntity(
+    /** Name of a MoverDirection. */
+    @PrimaryKey val direction: String,
+    val payloadJson: String,
     val fetchedAtEpochMillis: Long,
 )

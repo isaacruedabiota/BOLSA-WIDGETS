@@ -6,6 +6,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import dev.isaacru.bolsawidgets.BuildConfig
 import dev.isaacru.bolsawidgets.data.remote.yahoo.YahooChartApi
+import dev.isaacru.bolsawidgets.data.remote.yahoo.YahooScreenerApi
 import dev.isaacru.bolsawidgets.data.remote.yahoo.YahooSearchApi
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -75,6 +76,11 @@ object NetworkModule {
     @Singleton
     fun provideYahooSearchApi(retrofit: Retrofit): YahooSearchApi =
         retrofit.create(YahooSearchApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideYahooScreenerApi(retrofit: Retrofit): YahooScreenerApi =
+        retrofit.create(YahooScreenerApi::class.java)
 
     private const val CONNECT_TIMEOUT_SECONDS = 5L
     private const val READ_TIMEOUT_SECONDS = 8L

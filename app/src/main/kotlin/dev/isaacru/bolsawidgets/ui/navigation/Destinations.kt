@@ -8,6 +8,9 @@ import kotlinx.serialization.Serializable
 data object WatchlistRoute
 
 @Serializable
+data object ExploreRoute
+
+@Serializable
 data object SettingsRoute
 
 /** The expanded view of one symbol. Also where a widget tap lands. */
