@@ -266,7 +266,9 @@ private const val CARD_WIDTH = 168
 
 @Composable
 private fun SectionHeader(title: String, subtitle: String? = null) {
-    Column(modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)) {
+    // The same 16dp the carousels indent their first card by, so headings and cards
+    // start on the same line instead of the text hugging the screen edge.
+    Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp)) {
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,
