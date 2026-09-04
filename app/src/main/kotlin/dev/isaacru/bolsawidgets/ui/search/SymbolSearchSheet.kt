@@ -1,6 +1,7 @@
 package dev.isaacru.bolsawidgets.ui.search
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,15 +11,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -37,18 +42,26 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.isaacru.bolsawidgets.R
+import dev.isaacru.bolsawidgets.domain.market.Market
 import dev.isaacru.bolsawidgets.domain.model.Quote
+import dev.isaacru.bolsawidgets.domain.search.SymbolKind
+import dev.isaacru.bolsawidgets.domain.search.SymbolSuggestion
 import dev.isaacru.bolsawidgets.ui.common.ChangeIndicator
 import dev.isaacru.bolsawidgets.ui.common.Format
 import dev.isaacru.bolsawidgets.ui.theme.Gain
 
 /**
- * Symbol picker shared by the Cartera editor and the Seguimiento screen.
+ * Symbol picker shared by Seguimiento and the sparkline widget's setup.
+ *
+ * It suggests as you type and lets the list be narrowed by the only two things known
+ * about a symbol before it is resolved: what it is and where it trades. Price, currency
+ * and day change arrive with the quote, one call per symbol, which is not something a
+ * list can afford — so those are shown for the verified match alone.
  *
  * The verified block comes from the quote endpoint the whole app already depends on, so
  * it is always offered. The suggestion list comes from a separate Yahoo endpoint and is
@@ -78,23 +91,24 @@ fun SymbolSearchSheet(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
                 .padding(bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Text(
-                text = stringResource(R.string.search_title),
-                style = MaterialTheme.typography.titleLarge,
-            )
-
             OutlinedTextField(
                 value = state.query,
                 onValueChange = viewModel::onQueryChange,
-                label = { Text(stringResource(R.string.search_field_label)) },
+                placeholder = { Text(stringResource(R.string.search_placeholder)) },
                 leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (state.query.isNotEmpty()) {
+                        IconButton(onClick = { viewModel.onQueryChange("") }) {
+                            Icon(Icons.Filled.Close, stringResource(R.string.search_clear))
+                        }
+                    }
+                },
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Characters,
-                    imeAction = ImeAction.Search,
-                ),
+                // Not forced to upper case any more: this field takes company names as
+                // readily as tickers, and "SANTANDER" shouting back is not a search box.
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = { viewModel.choose(state.query) }),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -103,6 +117,17 @@ fun SymbolSearchSheet(
 
             if (state.isSearching) {
                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            }
+
+            if (state.showFilters) {
+                FilterRow(
+                    kinds = state.availableKinds,
+                    markets = state.availableMarkets,
+                    selectedKind = state.filter.kind,
+                    selectedMarket = state.filter.market,
+                    onKind = viewModel::toggleKind,
+                    onMarket = viewModel::toggleMarket,
+                )
             }
 
             state.failedSymbol?.let { symbol ->
@@ -128,6 +153,11 @@ fun SymbolSearchSheet(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
+                state.showFilteredOutState -> Text(
+                    text = stringResource(R.string.search_no_results_filtered),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+
                 state.showEmptyState -> Text(
                     text = stringResource(R.string.search_no_results),
                     style = MaterialTheme.typography.bodyMedium,
@@ -137,47 +167,108 @@ fun SymbolSearchSheet(
             LazyColumn(modifier = Modifier.heightIn(max = 420.dp)) {
                 state.exactMatch?.let { quote ->
                     item {
-                        SectionHeader(stringResource(R.string.search_verified_header))
                         VerifiedResultRow(quote = quote, onClick = { viewModel.chooseVerified(quote) })
                         HorizontalDivider()
                     }
                 }
-                if (state.suggestions.isNotEmpty()) {
-                    item { SectionHeader(stringResource(R.string.search_suggestions_header)) }
-                    items(state.suggestions, key = { it.symbol }) { suggestion ->
-                        ListItem(
-                            headlineContent = { Text(suggestion.symbol) },
-                            supportingContent = {
-                                Text(
-                                    text = listOf(suggestion.name, suggestion.exchange, suggestion.type)
-                                        .filter { it.isNotBlank() }
-                                        .joinToString(" · "),
-                                    maxLines = 2,
-                                )
-                            },
-                            trailingContent = {
-                                if (state.resolvingSymbol == suggestion.symbol) {
-                                    CircularProgressIndicator(modifier = Modifier.size(20.dp))
-                                }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { viewModel.choose(suggestion.symbol) },
-                        )
-                    }
+                items(state.suggestions, key = { it.symbol }) { suggestion ->
+                    SuggestionRow(
+                        suggestion = suggestion,
+                        isResolving = state.resolvingSymbol == suggestion.symbol,
+                        onClick = { viewModel.choose(suggestion.symbol) },
+                    )
                 }
             }
         }
     }
 }
 
+/**
+ * The two filter rows, scrolled sideways.
+ *
+ * Only the options present in the current results are drawn, so every chip on screen has
+ * something behind it.
+ */
 @Composable
-private fun SectionHeader(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(vertical = 8.dp),
+private fun FilterRow(
+    kinds: List<SymbolKind>,
+    markets: List<Market>,
+    selectedKind: SymbolKind?,
+    selectedMarket: Market?,
+    onKind: (SymbolKind) -> Unit,
+    onMarket: (Market) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        if (kinds.size > 1) {
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                kinds.forEach { kind ->
+                    FilterChip(
+                        selected = kind == selectedKind,
+                        onClick = { onKind(kind) },
+                        label = { Text(stringResource(kind.labelRes())) },
+                    )
+                }
+            }
+        }
+        if (markets.size > 1) {
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                markets.forEach { market ->
+                    FilterChip(
+                        selected = market == selectedMarket,
+                        onClick = { onMarket(market) },
+                        label = { Text(stringResource(market.labelRes())) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * One suggestion, name first.
+ *
+ * The name is what the user is looking for — nobody remembers that Inditex is ITX.MC —
+ * and the ticker, the venue and the type sit underneath as the line that tells two
+ * listings of the same company apart.
+ */
+@Composable
+private fun SuggestionRow(
+    suggestion: SymbolSuggestion,
+    isResolving: Boolean,
+    onClick: () -> Unit,
+) {
+    ListItem(
+        headlineContent = {
+            Text(
+                text = suggestion.name,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        },
+        supportingContent = {
+            Text(
+                text = listOf(
+                    suggestion.symbol,
+                    suggestion.exchange,
+                    stringResource(suggestion.kind.labelRes()),
+                ).filter { it.isNotBlank() }.joinToString(" · "),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        },
+        trailingContent = {
+            if (isResolving) {
+                CircularProgressIndicator(modifier = Modifier.size(20.dp))
+            }
+        },
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
     )
 }
 
@@ -195,10 +286,22 @@ private fun VerifiedResultRow(quote: Quote, onClick: () -> Unit) {
                     tint = Gain,
                     modifier = Modifier.size(16.dp),
                 )
-                Text(text = quote.symbol, fontWeight = FontWeight.SemiBold)
+                Text(
+                    text = quote.shortName ?: quote.symbol,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
         },
-        supportingContent = { Text(quote.shortName ?: quote.exchange.orEmpty()) },
+        supportingContent = {
+            Text(
+                text = listOf(quote.symbol, quote.exchange.orEmpty())
+                    .filter { it.isNotBlank() }
+                    .joinToString(" · "),
+                maxLines = 1,
+            )
+        },
         trailingContent = {
             Column(horizontalAlignment = Alignment.End) {
                 Text(Format.price(quote.price, quote.currency))
@@ -208,8 +311,27 @@ private fun VerifiedResultRow(quote: Quote, onClick: () -> Unit) {
                 )
             }
         },
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
     )
+}
+
+private fun SymbolKind.labelRes(): Int = when (this) {
+    SymbolKind.EQUITY -> R.string.symbol_kind_equity
+    SymbolKind.ETF -> R.string.symbol_kind_etf
+    SymbolKind.FUND -> R.string.symbol_kind_fund
+    SymbolKind.INDEX -> R.string.symbol_kind_index
+    SymbolKind.CRYPTO -> R.string.symbol_kind_crypto
+    SymbolKind.CURRENCY -> R.string.symbol_kind_currency
+    SymbolKind.OTHER -> R.string.symbol_kind_other
+}
+
+private fun Market.labelRes(): Int = when (this) {
+    Market.BME -> R.string.market_bme
+    Market.US -> R.string.market_us
+    Market.EURONEXT -> R.string.market_euronext
+    Market.XETRA -> R.string.market_xetra
+    Market.BORSA_ITALIANA -> R.string.market_milan
+    Market.SIX -> R.string.market_six
+    Market.LONDON -> R.string.market_london
+    Market.UNKNOWN -> R.string.market_other
 }

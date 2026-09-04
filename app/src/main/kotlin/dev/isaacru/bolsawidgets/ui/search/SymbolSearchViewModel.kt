@@ -5,6 +5,10 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.isaacru.bolsawidgets.domain.model.Quote
 import dev.isaacru.bolsawidgets.domain.repository.QuoteRepository
+import dev.isaacru.bolsawidgets.domain.market.Market
+import dev.isaacru.bolsawidgets.domain.search.SymbolFilter
+import dev.isaacru.bolsawidgets.domain.search.SymbolFilters
+import dev.isaacru.bolsawidgets.domain.search.SymbolKind
 import dev.isaacru.bolsawidgets.domain.search.SymbolSuggestion
 import dev.isaacru.bolsawidgets.domain.usecase.SearchSymbolsUseCase
 import dev.isaacru.bolsawidgets.domain.usecase.SymbolSearchOutcome
@@ -30,19 +34,32 @@ data class SymbolSearchUiState(
     val query: String = "",
     val isSearching: Boolean = false,
     val exactMatch: Quote? = null,
+    /** Already filtered: this is what the list draws. */
     val suggestions: List<SymbolSuggestion> = emptyList(),
     val suggestionsUnavailable: Boolean = false,
     val resolvingSymbol: String? = null,
     val failedSymbol: String? = null,
+    val filter: SymbolFilter = SymbolFilter.None,
+    val availableKinds: List<SymbolKind> = emptyList(),
+    val availableMarkets: List<Market> = emptyList(),
+    /** How many suggestions came back before the filter narrowed them. */
+    val totalSuggestions: Int = 0,
 ) {
     val hasResults: Boolean get() = exactMatch != null || suggestions.isNotEmpty()
 
+    /** Chips are only worth the space when there is more than one thing to choose. */
+    val showFilters: Boolean get() = availableKinds.size > 1 || availableMarkets.size > 1
+
     val showEmptyState: Boolean
-        get() = query.isNotBlank() && !isSearching && !hasResults
+        get() = query.isNotBlank() && !isSearching && !hasResults && totalSuggestions == 0
+
+    /** Results exist, the filter is what is hiding them: a different thing to say. */
+    val showFilteredOutState: Boolean
+        get() = !isSearching && totalSuggestions > 0 && suggestions.isEmpty() && exactMatch == null
 }
 
 /**
- * Drives the symbol picker shared by the Cartera editor and the Seguimiento screen.
+ * Drives the symbol picker shared by Seguimiento and the sparkline widget's setup.
  *
  * Nothing leaves this screen without a successful quote call: suggestions are resolved
  * before being handed back, so a symbol that reaches Room is always priceable.
@@ -55,6 +72,7 @@ class SymbolSearchViewModel @Inject constructor(
 
     private val query = MutableStateFlow("")
     private val resolution = MutableStateFlow(ResolutionState())
+    private val filter = MutableStateFlow(SymbolFilter.None)
 
     private val chosenChannel = Channel<Quote>(Channel.BUFFERED)
 
@@ -79,15 +97,23 @@ class SymbolSearchViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(SUBSCRIPTION_TIMEOUT), SearchState())
 
     val uiState: StateFlow<SymbolSearchUiState> =
-        combine(query, searchResults, resolution) { text, results, resolving ->
+        combine(query, searchResults, resolution, filter) { text, results, resolving, selected ->
+            val all = results.outcome.suggestions
+            // Pruned against the results in hand, so a chip never survives into a search
+            // that has nothing behind it.
+            val effective = SymbolFilters.prune(selected, all)
             SymbolSearchUiState(
                 query = text,
                 isSearching = results.isSearching,
                 exactMatch = results.outcome.exactMatch,
-                suggestions = results.outcome.suggestions,
+                suggestions = SymbolFilters.apply(all, effective),
                 suggestionsUnavailable = results.outcome.suggestionsUnavailable,
                 resolvingSymbol = resolving.inFlight,
                 failedSymbol = resolving.failed,
+                filter = effective,
+                availableKinds = SymbolFilters.kindsIn(all),
+                availableMarkets = SymbolFilters.marketsIn(all),
+                totalSuggestions = all.size,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(SUBSCRIPTION_TIMEOUT), SymbolSearchUiState())
 
@@ -98,6 +124,20 @@ class SymbolSearchViewModel @Inject constructor(
     fun reset() {
         query.value = ""
         resolution.value = ResolutionState()
+        filter.value = SymbolFilter.None
+    }
+
+    /** Tapping the selected chip again clears it, which is how a chip row is expected to work. */
+    fun toggleKind(kind: SymbolKind) {
+        filter.update { it.with(kind.takeIf { candidate -> candidate != it.kind }) }
+    }
+
+    fun toggleMarket(market: Market) {
+        filter.update { it.with(market.takeIf { candidate -> candidate != it.market }) }
+    }
+
+    fun clearFilters() {
+        filter.value = SymbolFilter.None
     }
 
     fun onQueryChange(value: String) {
@@ -132,7 +172,9 @@ class SymbolSearchViewModel @Inject constructor(
     )
 
     private companion object {
-        const val DEBOUNCE_MILLIS = 350L
+        // Short enough that the list feels like it is following the typing, long
+        // enough that a word costs one request rather than one per letter.
+        const val DEBOUNCE_MILLIS = 220L
         const val SUBSCRIPTION_TIMEOUT = 5_000L
     }
 }

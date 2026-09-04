@@ -162,6 +162,11 @@ Yahoo Finance son endpoints públicos no documentados. Se asume que fallan.
   `suggestionsUnavailable`. El camino garantizado es siempre resolver el ticker exacto contra
   `v8/chart`. Si el buscador cae, la UI degrada a "escribe el ticker exacto", nunca se
   bloquea un alta.
+- La lista de sugerencias **solo se puede filtrar por tipo y por plaza**, que es lo único que
+  se sabe de un símbolo antes de resolverlo. Precio, divisa y variación llegan con la
+  cotización, **una llamada por símbolo**, y eso una lista de búsqueda no se lo puede
+  permitir: por eso solo se muestran para el valor verificado. Y solo se ofrecen los filtros
+  presentes en los resultados: un chip que no puede devolver nada es peor que ningún chip.
 - El endpoint de Yahoo sirve un símbolo por llamada, así que el batch es un fan-out con
   concurrencia limitada (4), no una petición agrupada.
 

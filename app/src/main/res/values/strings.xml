@@ -29,13 +29,29 @@
     <string name="watchlist_already_present">%1$s ya está en la lista</string>
 
     <!-- Buscador de símbolos -->
-    <string name="search_title">Buscar valor</string>
-    <string name="search_field_label">Ticker o nombre</string>
-    <string name="search_verified_header">Verificado</string>
-    <string name="search_suggestions_header">Sugerencias</string>
+    <string name="search_placeholder">Nombre o ticker: Inditex, ITX.MC, iShares…</string>
+    <string name="search_clear">Borrar</string>
+    <string name="search_no_results_filtered">Ningún resultado con esos filtros. Toca el filtro otra vez para quitarlo.</string>
+
+    <!-- Filtros de la búsqueda: tipo de instrumento y plaza -->
+    <string name="symbol_kind_equity">Acciones</string>
+    <string name="symbol_kind_etf">ETF</string>
+    <string name="symbol_kind_fund">Fondos</string>
+    <string name="symbol_kind_index">Índices</string>
+    <string name="symbol_kind_crypto">Cripto</string>
+    <string name="symbol_kind_currency">Divisas</string>
+    <string name="symbol_kind_other">Otros</string>
+    <string name="market_bme">Madrid</string>
+    <string name="market_us">EE. UU.</string>
+    <string name="market_euronext">Euronext</string>
+    <string name="market_xetra">Xetra</string>
+    <string name="market_milan">Milán</string>
+    <string name="market_six">Suiza</string>
+    <string name="market_london">Londres</string>
+    <string name="market_other">Otras plazas</string>
     <string name="search_suggestions_unavailable">El buscador de Yahoo no responde. Escribe el ticker exacto y se validará igualmente.</string>
     <string name="search_no_results">Ningún resultado. Prueba con el ticker exacto, incluido el sufijo de mercado (.MC, .AS…).</string>
-    <string name="search_hint">Escribe al menos un carácter.</string>
+    <string name="search_hint">Escribe y te voy sugiriendo.</string>
     <string name="search_resolving">Validando %1$s…</string>
     <string name="search_resolve_failed">%1$s no se ha podido cotizar</string>
 

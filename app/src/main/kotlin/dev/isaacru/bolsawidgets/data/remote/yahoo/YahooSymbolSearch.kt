@@ -3,6 +3,7 @@ package dev.isaacru.bolsawidgets.data.remote.yahoo
 import dev.isaacru.bolsawidgets.data.remote.HttpStatusException
 import dev.isaacru.bolsawidgets.data.remote.retryWithBackoff
 import dev.isaacru.bolsawidgets.di.IoDispatcher
+import dev.isaacru.bolsawidgets.domain.search.SymbolKind
 import dev.isaacru.bolsawidgets.domain.search.SymbolSearch
 import dev.isaacru.bolsawidgets.domain.search.SymbolSuggestion
 import kotlinx.coroutines.CoroutineDispatcher
@@ -47,6 +48,9 @@ class YahooSymbolSearch @Inject constructor(
             name = longname ?: shortname ?: ticker,
             exchange = exchDisp ?: exchange.orEmpty(),
             type = typeDisp ?: quoteType.orEmpty(),
+            // quoteType is the machine-readable one and the only one worth filtering on:
+            // typeDisp is a display string that arrives localised and reworded.
+            kind = SymbolKind.of(quoteType ?: typeDisp),
         )
     }
 }

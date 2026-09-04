@@ -377,6 +377,22 @@ nada.
 Medido en el emulador: guardar una aportación redibuja los cuatro widgets y hace **cero**
 peticiones HTTP. Antes, ese mismo redibujado podía traerse un gráfico entero.
 
+**Buscador nuevo**. Sugerencias mientras escribes (220 ms de pausa, una petición por
+palabra) y la lista con el **nombre primero**: nadie recuerda que Inditex es ITX.MC. Debajo,
+la línea que distingue dos listados de la misma empresa: `SAN.MC · Madrid Stock Exchange
+CATS · Acciones` frente a `SAN · NYSE · Acciones`.
+
+Encima de la lista, dos filas de chips —**tipo** (Acciones, ETF, Fondos, Índices, Cripto,
+Divisas) y **plaza** (Madrid, EE. UU., Euronext, Xetra, Milán, Suiza, Londres, Otras)— que
+solo muestran las opciones presentes en los resultados de ese momento. Tocar el chip elegido
+otra vez lo quita, y una selección que los nuevos resultados no pueden satisfacer se cae
+sola: filtrar por Madrid y luego buscar "ishares" no deja una lista vacía sin explicación.
+
+Por qué solo esas dos variables: son lo único que se sabe de un símbolo **antes** de
+resolverlo. El precio, la divisa y la variación llegan con la cotización, una llamada por
+símbolo, y eso una lista no se lo puede permitir —sería exactamente lo contrario del trabajo
+de batería de la fase anterior—. Por eso se muestran para el valor verificado, que es uno.
+
 ---
 
 ## Criterios de aceptación v1
