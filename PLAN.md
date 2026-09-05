@@ -447,6 +447,23 @@ es una petición más, cache-first a 15 minutos, y solo porque alguien ha tocado
 `PriceChart` se mueve de `ui/detail` a `ui/common`, que es donde vive lo que comparten dos
 pantallas.
 
+**El porcentaje del día en la lista de búsqueda**. Dos veces dije que esto costaba una
+llamada por fila. Era verdad con los endpoints que estaba usando, y era incompleto: existe
+`v8/finance/spark`, el que Yahoo usa para sus mini-gráficos, que **acepta varios símbolos de
+golpe, sin crumb**, y devuelve `fulldayChangePercent` ya calculado. Contrastado contra lo que
+la app ya mostraba: SAN.MC −0,26 %, ITX.MC +1,13 %, IBE.MC +0,71 %, las mismas cifras.
+
+Así que la variación del día cuesta **una petición por búsqueda**, no una por fila. Se pide
+después de dibujar la lista, y la lista funciona igual si no llega: un símbolo del que no se
+sabe nada no enseña porcentaje, nunca un 0,00 % que sería una afirmación falsa sobre el
+mercado. Medido escribiendo "iber" letra a letra: 4 búsquedas, 4 intentos de ticker exacto
+—los de siempre— y **una sola** llamada a spark, porque `flatMapLatest` cancela la anterior
+en cuanto llega otra tecla.
+
+Lo que spark **no** trae es divisa ni nombre, así que solo sirve para ponerle un porcentaje a
+algo ya identificado. La cotización completa sigue viniendo de `v8/chart`, que es lo que
+mantiene cierto el "nada entra en Room sin cotizar".
+
 ---
 
 ## Criterios de aceptación v1

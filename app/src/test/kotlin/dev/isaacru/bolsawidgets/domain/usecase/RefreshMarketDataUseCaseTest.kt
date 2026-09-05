@@ -182,6 +182,8 @@ class RefreshMarketDataUseCaseTest {
             return RefreshOutcome.nothingToDo(Instant.EPOCH)
         }
 
+        override suspend fun getDayChanges(symbols: List<String>): Map<String, Double> = emptyMap()
+
         override suspend fun getCachedQuotes(symbols: List<String>): Map<String, Quote> =
             cached.filterKeys { it in symbols }
 

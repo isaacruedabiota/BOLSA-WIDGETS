@@ -173,6 +173,10 @@ Yahoo Finance son endpoints públicos no documentados. Se asume que fallan.
   `suggestionsUnavailable`. El camino garantizado es siempre resolver el ticker exacto contra
   `v8/chart`. Si el buscador cae, la UI degrada a "escribe el ticker exacto", nunca se
   bloquea un alta.
+- La lista de resultados enseña **la variación del día** de cada fila, y cuesta **una sola
+  petición por búsqueda** (`spark`), no una por fila. Se pide después de dibujar la lista y
+  la lista funciona sin ella; un símbolo del que no se sabe nada no enseña porcentaje, nunca
+  un 0,00 % que sería una afirmación falsa sobre el mercado.
 - Un valor **se mira antes de añadirlo**: tocar una sugerencia abre una ficha con precio,
   variación del día y el gráfico de la sesión, y de ahí sale el botón de añadir. La llamada
   que resuelve el símbolo es la misma que ya hacía el alta directa, así que mirar primero
@@ -182,8 +186,14 @@ Yahoo Finance son endpoints públicos no documentados. Se asume que fallan.
   cotización, **una llamada por símbolo**, y eso una lista de búsqueda no se lo puede
   permitir: por eso solo se muestran para el valor verificado. Y solo se ofrecen los filtros
   presentes en los resultados: un chip que no puede devolver nada es peor que ningún chip.
-- El endpoint de Yahoo sirve un símbolo por llamada, así que el batch es un fan-out con
-  concurrencia limitada (4), no una petición agrupada.
+- El endpoint de cotización (`v8/chart`) sirve **un símbolo por llamada**, así que el batch
+  es un fan-out con concurrencia limitada (4), no una petición agrupada.
+- **Excepción: `v8/finance/spark`**, que sí acepta varios símbolos de golpe y sin crumb —es
+  el que usa Yahoo para sus mini-gráficos—. Devuelve la serie del día y
+  `fulldayChangePercent` ya calculado, pero **ni divisa ni nombre**, así que solo sirve para
+  ponerle un porcentaje a algo ya identificado: la lista de búsqueda. La cotización completa
+  sigue viniendo de `v8/chart`, que es lo que mantiene cierto el "nada entra en Room sin
+  cotizar". `QuoteRepository.getDayChanges` es best-effort: un fallo es un mapa vacío.
 
 ---
 

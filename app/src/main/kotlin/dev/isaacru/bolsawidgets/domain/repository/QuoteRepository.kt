@@ -57,6 +57,16 @@ interface QuoteRepository {
     ): CandleSeries?
 
     /**
+     * The day's change in percent for [symbols], in one request, best effort.
+     *
+     * This is the cheap half of a quote: enough to put a percentage next to a name, not
+     * enough to store one. Symbols the provider says nothing about are simply absent from
+     * the result, and a failure is an empty map rather than an exception, because this only
+     * ever decorates a list that has to keep working without it.
+     */
+    suspend fun getDayChanges(symbols: List<String>): Map<String, Double>
+
+    /**
      * Checks that [symbol] is a ticker the active provider can actually price, returning
      * the quote it resolved to. Returns null when the symbol does not exist.
      * Nothing is written to the watchlist or the portfolio without passing through here.

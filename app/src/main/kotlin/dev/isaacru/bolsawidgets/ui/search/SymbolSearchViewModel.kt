@@ -42,6 +42,8 @@ data class SymbolSearchUiState(
     val resolvingSymbol: String? = null,
     val failedSymbol: String? = null,
     val preview: SymbolPreview? = null,
+    /** The day's move per symbol, for the rows that have one. */
+    val dayChanges: Map<String, Double> = emptyMap(),
     val filter: SymbolFilter = SymbolFilter.None,
     val availableKinds: List<SymbolKind> = emptyList(),
     val availableMarkets: List<Market> = emptyList(),
@@ -108,7 +110,19 @@ class SymbolSearchViewModel @Inject constructor(
                     return@flow
                 }
                 emit(SearchState(isSearching = true))
-                emit(SearchState(isSearching = false, outcome = searchSymbols(text)))
+                val outcome = searchSymbols(text)
+                emit(SearchState(isSearching = false, outcome = outcome))
+
+                // One request for the whole page of results, after they are on screen.
+                // The list is drawn without waiting for it and stays usable if it never
+                // arrives: a percentage is decoration, the ticker is the answer.
+                val symbols = (listOfNotNull(outcome.exactMatch?.symbol) + outcome.suggestions.map { it.symbol })
+                if (symbols.isNotEmpty()) {
+                    val changes = quoteRepository.getDayChanges(symbols)
+                    if (changes.isNotEmpty()) {
+                        emit(SearchState(isSearching = false, outcome = outcome, dayChanges = changes))
+                    }
+                }
             }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(SUBSCRIPTION_TIMEOUT), SearchState())
@@ -134,6 +148,7 @@ class SymbolSearchViewModel @Inject constructor(
                 resolvingSymbol = resolving.inFlight,
                 failedSymbol = resolving.failed,
                 preview = previewed,
+                dayChanges = results.dayChanges,
                 filter = effective,
                 availableKinds = SymbolFilters.kindsIn(all),
                 availableMarkets = SymbolFilters.marketsIn(all),
@@ -223,6 +238,7 @@ class SymbolSearchViewModel @Inject constructor(
     private data class SearchState(
         val isSearching: Boolean = false,
         val outcome: SymbolSearchOutcome = SymbolSearchOutcome.Empty,
+        val dayChanges: Map<String, Double> = emptyMap(),
     )
 
     private data class ResolutionState(

@@ -10,6 +10,7 @@ import dev.isaacru.bolsawidgets.data.local.toDomain
 import dev.isaacru.bolsawidgets.data.local.toDomain as candleToDomain
 import dev.isaacru.bolsawidgets.data.local.toEntity
 import dev.isaacru.bolsawidgets.data.local.toWire
+import dev.isaacru.bolsawidgets.data.remote.yahoo.YahooSparkApi
 import dev.isaacru.bolsawidgets.di.IoDispatcher
 import dev.isaacru.bolsawidgets.domain.calc.CurrencyConverter
 import dev.isaacru.bolsawidgets.domain.model.Candle
@@ -44,6 +45,7 @@ import javax.inject.Singleton
  */
 @Singleton
 class QuoteRepositoryImpl @Inject constructor(
+    private val sparkApi: YahooSparkApi,
     private val quoteCacheDao: QuoteCacheDao,
     private val fxRateDao: FxRateDao,
     private val candleCacheDao: CandleCacheDao,
@@ -76,6 +78,28 @@ class QuoteRepositoryImpl @Inject constructor(
                 quoteCacheDao.getBySymbols(symbols.map { it.uppercase() })
                     .associate { it.symbol.uppercase() to it.toDomain() }
             }
+        }
+
+    override suspend fun getDayChanges(symbols: List<String>): Map<String, Double> =
+        withContext(io) {
+            val requested = symbols.map { it.uppercase() }
+                .distinct()
+                .take(YahooSparkApi.MAX_SYMBOLS)
+            if (requested.isEmpty()) return@withContext emptyMap()
+
+            runCatching {
+                // One attempt: this decorates a list while the user is typing, and a queue
+                // of retries behind every keystroke is exactly what not to do.
+                val response = sparkApi.spark(symbols = requested.joinToString(","))
+                if (!response.isSuccessful) return@withContext emptyMap()
+                response.body().orEmpty()
+                    .mapNotNull { (key, quote) ->
+                        val symbol = (quote.symbol ?: key).uppercase()
+                        val change = quote.changePercent() ?: return@mapNotNull null
+                        symbol to change
+                    }
+                    .toMap()
+            }.getOrDefault(emptyMap())
         }
 
     override suspend fun refreshQuotes(symbols: List<String>): RefreshOutcome = withContext(io) {

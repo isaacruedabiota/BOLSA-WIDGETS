@@ -146,6 +146,8 @@ class SearchSymbolsUseCaseTest {
         override fun observeQuotes(): Flow<Map<String, Quote>> = flowOf(emptyMap())
         override fun observeQuote(symbol: String): Flow<Quote?> = flowOf(null)
         override fun observeConverter(): Flow<CurrencyConverter> = flowOf(CurrencyConverter.Empty)
+        override suspend fun getDayChanges(symbols: List<String>): Map<String, Double> = emptyMap()
+
         override suspend fun getCachedQuotes(symbols: List<String>): Map<String, Quote> = emptyMap()
         override suspend fun refreshQuotes(symbols: List<String>): RefreshOutcome =
             RefreshOutcome.nothingToDo(Instant.EPOCH)

@@ -192,6 +192,7 @@ fun SymbolSearchSheet(
                 items(state.suggestions, key = { it.symbol }) { suggestion ->
                     SuggestionRow(
                         suggestion = suggestion,
+                        changePercent = state.dayChanges[suggestion.symbol.uppercase()],
                         isResolving = state.resolvingSymbol == suggestion.symbol,
                         onClick = { viewModel.open(suggestion.symbol) },
                     )
@@ -258,6 +259,7 @@ private fun FilterRow(
 @Composable
 private fun SuggestionRow(
     suggestion: SymbolSuggestion,
+    changePercent: Double?,
     isResolving: Boolean,
     onClick: () -> Unit,
 ) {
@@ -282,8 +284,14 @@ private fun SuggestionRow(
             )
         },
         trailingContent = {
-            if (isResolving) {
-                CircularProgressIndicator(modifier = Modifier.size(20.dp))
+            when {
+                isResolving -> CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                // Absent rather than zero when the day's move is unknown: a flat 0,00 %
+                // would be a claim about the market, not a missing value.
+                changePercent != null -> ChangeIndicator(
+                    percent = changePercent,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
             }
         },
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),

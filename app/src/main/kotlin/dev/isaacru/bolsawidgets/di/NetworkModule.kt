@@ -8,6 +8,7 @@ import dev.isaacru.bolsawidgets.BuildConfig
 import dev.isaacru.bolsawidgets.data.remote.yahoo.YahooChartApi
 import dev.isaacru.bolsawidgets.data.remote.yahoo.YahooScreenerApi
 import dev.isaacru.bolsawidgets.data.remote.yahoo.YahooSearchApi
+import dev.isaacru.bolsawidgets.data.remote.yahoo.YahooSparkApi
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -76,6 +77,11 @@ object NetworkModule {
     @Singleton
     fun provideYahooSearchApi(retrofit: Retrofit): YahooSearchApi =
         retrofit.create(YahooSearchApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideYahooSparkApi(retrofit: Retrofit): YahooSparkApi =
+        retrofit.create(YahooSparkApi::class.java)
 
     @Provides
     @Singleton
