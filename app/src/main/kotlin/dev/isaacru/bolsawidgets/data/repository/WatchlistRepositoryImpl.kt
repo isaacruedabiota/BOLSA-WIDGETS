@@ -64,6 +64,14 @@ class WatchlistRepositoryImpl @Inject constructor(
         watchlistDao.upsert(existing.copy(isFavorite = favorite))
     }
 
+    override suspend fun rename(symbol: String, name: String) = withContext(io) {
+        val existing = watchlistDao.getBySymbol(symbol.trim().uppercase()) ?: return@withContext
+        // Stored blank rather than as the ticker: the row falls back to the market's name
+        // on its own, and writing the ticker in would freeze it if the market ever
+        // starts answering with a proper name.
+        watchlistDao.upsert(existing.copy(name = name.trim()))
+    }
+
     override suspend fun reorder(symbolsInOrder: List<String>) = withContext(io) {
         watchlistDao.replaceOrder(symbolsInOrder.map { it.trim().uppercase() })
     }

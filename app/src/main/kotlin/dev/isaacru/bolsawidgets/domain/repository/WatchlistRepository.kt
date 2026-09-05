@@ -25,6 +25,12 @@ interface WatchlistRepository {
     /** Stars or unstars [symbol]. A symbol that is not on the list is left alone. */
     suspend fun setFavorite(symbol: String, favorite: Boolean)
 
+    /**
+     * Renames [symbol] to [name] everywhere it is shown, widgets included.
+     * A blank [name] restores the one the market gives it.
+     */
+    suspend fun rename(symbol: String, name: String)
+
     /** Persists [symbolsInOrder] as the new ordering. */
     suspend fun reorder(symbolsInOrder: List<String>)
 

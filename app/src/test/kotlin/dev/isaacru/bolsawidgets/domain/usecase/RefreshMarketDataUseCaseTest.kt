@@ -162,6 +162,7 @@ class RefreshMarketDataUseCaseTest {
         override suspend fun remove(symbol: String) = Unit
         override suspend fun setContribution(symbol: String, contribution: Contribution?) = Unit
         override suspend fun setFavorite(symbol: String, favorite: Boolean) = Unit
+        override suspend fun rename(symbol: String, name: String) = Unit
         override suspend fun reorder(symbolsInOrder: List<String>) = Unit
         override suspend fun replaceAll(items: List<WatchlistItem>) = Unit
     }

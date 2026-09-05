@@ -124,6 +124,13 @@
     <string name="backup_import_done">Importado: %1$s y %2$s</string>
     <string name="action_replace">Reemplazar</string>
 
+    <!-- Renombrar un valor: el nombre del usuario manda en la app y en los widgets -->
+    <string name="action_rename">Renombrar</string>
+    <string name="rename_title">Renombrar %1$s</string>
+    <string name="rename_body">El nombre que le pongas se ve en la app y en los widgets. Déjalo vacío para volver al del mercado.</string>
+    <string name="rename_label">Nombre</string>
+    <string name="rename_restore">Restaurar</string>
+
     <!-- Aportaciones recurrentes: el plan de inversión, valor a valor -->
     <string name="action_contribution">Aportación</string>
     <string name="contribution_title">Aportación en %1$s</string>

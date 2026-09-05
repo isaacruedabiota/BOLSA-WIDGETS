@@ -128,6 +128,13 @@ dev.isaacru.bolsawidgets
 - `Format.editable` existe aparte de `Format.plain` porque un número que va a un campo de
   texto **no puede llevar separador de miles**: en castellano es un punto, y al normalizar
   la coma decimal "2.450,00" deja de ser parseable.
+- El **nombre de un valor lo manda el usuario**: `WatchlistRow.displayName` prefiere
+  `item.name` y cae al del mercado solo si está vacío, así que renombrar algo se ve a la vez
+  en la app, en el widget de seguimiento y en el del gráfico. Ojo con la diferencia entre
+  "tiene nombre guardado" y "lo han renombrado": al añadir un valor se guarda el nombre del
+  proveedor, así que `hasCustomName` compara con el `shortName` de la cotización. Sin esa
+  comparación, todas las filas del widget pasan a enseñar el nombre largo del mercado en vez
+  del ticker.
 - La **variación del día** se mide siempre contra `previousClose` (cierre de la sesión
   anterior), no contra la apertura.
 - **Unidades menores**: Yahoo cotiza algunos valores de Londres en `GBp` (peniques, con `p`

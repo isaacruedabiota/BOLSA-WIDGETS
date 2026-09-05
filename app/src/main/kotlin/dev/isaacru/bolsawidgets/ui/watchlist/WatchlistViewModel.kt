@@ -82,6 +82,11 @@ class WatchlistViewModel @Inject constructor(
         viewModelScope.launch { watchlistRepository.setFavorite(symbol, favorite) }
     }
 
+    /** Renames a value; blank restores the name the market gives it. */
+    fun rename(symbol: String, name: String) {
+        viewModelScope.launch { watchlistRepository.rename(symbol, name) }
+    }
+
     fun moveUp(symbol: String) = move(symbol, -1)
 
     fun moveDown(symbol: String) = move(symbol, 1)

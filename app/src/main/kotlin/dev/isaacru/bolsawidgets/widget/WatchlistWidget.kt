@@ -110,8 +110,11 @@ private fun WatchlistRowItem(row: WatchlistRow, zone: ZoneId, compact: Boolean) 
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = GlanceModifier.defaultWeight()) {
+            // A value the user renamed leads with that name, because that is the whole
+            // point of renaming it; the ticker drops to the second line, which the short
+            // sizes do not have room for. Everything else leads with the ticker as before.
             Text(
-                text = row.symbol,
+                text = if (row.hasCustomName) row.displayName else row.symbol,
                 style = TextStyle(
                     color = GlanceTheme.colors.onSurface,
                     fontSize = 14.sp,
@@ -121,7 +124,7 @@ private fun WatchlistRowItem(row: WatchlistRow, zone: ZoneId, compact: Boolean) 
             )
             if (!compact) {
                 Text(
-                    text = row.displayName,
+                    text = if (row.hasCustomName) row.symbol else row.displayName,
                     style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 11.sp),
                     maxLines = 1,
                 )

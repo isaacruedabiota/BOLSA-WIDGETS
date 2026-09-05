@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DriveFileRenameOutline
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Star
@@ -76,6 +77,7 @@ fun WatchlistScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var showSearch by remember { mutableStateOf(false) }
     var editingContribution by remember { mutableStateOf<WatchlistRow?>(null) }
+    var renaming by remember { mutableStateOf<WatchlistRow?>(null) }
 
     SnackbarMessages(viewModel.messages, snackbarHostState)
 
@@ -126,6 +128,7 @@ fun WatchlistScreen(
                         onMoveDown = { viewModel.moveDown(row.symbol) },
                         onRemove = { viewModel.remove(row.symbol) },
                         onEditContribution = { editingContribution = row },
+                        onRename = { renaming = row },
                         onToggleFavorite = {
                             viewModel.toggleFavorite(row.symbol, !row.item.isFavorite)
                         },
@@ -133,6 +136,17 @@ fun WatchlistScreen(
                 }
             }
         }
+    }
+
+    renaming?.let { row ->
+        RenameDialog(
+            row = row,
+            onDismiss = { renaming = null },
+            onSave = { name ->
+                viewModel.rename(row.symbol, name)
+                renaming = null
+            },
+        )
     }
 
     editingContribution?.let { row ->
@@ -167,6 +181,7 @@ private fun WatchlistCard(
     onRemove: () -> Unit,
     onEditContribution: () -> Unit,
     onToggleFavorite: () -> Unit,
+    onRename: () -> Unit,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     val quote = row.quote
@@ -268,6 +283,14 @@ private fun WatchlistCard(
                         onClick = {
                             menuOpen = false
                             onToggleFavorite()
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.action_rename)) },
+                        leadingIcon = { Icon(Icons.Filled.DriveFileRenameOutline, contentDescription = null) },
+                        onClick = {
+                            menuOpen = false
+                            onRename()
                         },
                     )
                     DropdownMenuItem(
@@ -426,3 +449,53 @@ private fun periodLabel(period: ContributionPeriod): Int = when (period) {
 
 /** Accepts either decimal separator, like every other amount field in the app. */
 private fun String.toDecimalOrNull(): Double? = trim().replace(',', '.').toDoubleOrNull()
+
+/**
+ * Renaming a value.
+ *
+ * The field starts on whatever is being shown right now, market name included, so the
+ * dialog is also a way to see what you are replacing. Leaving it empty is how you undo a
+ * rename: the row goes back to the name the market gives it rather than to nothing.
+ */
+@Composable
+private fun RenameDialog(
+    row: WatchlistRow,
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit,
+) {
+    var name by remember(row.symbol) { mutableStateOf(row.displayName) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.rename_title, row.symbol)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = stringResource(R.string.rename_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(stringResource(R.string.rename_label)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onSave(name) }) {
+                Text(stringResource(R.string.action_save))
+            }
+        },
+        dismissButton = {
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                TextButton(onClick = { onSave("") }) {
+                    Text(stringResource(R.string.rename_restore))
+                }
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+            }
+        },
+    )
+}

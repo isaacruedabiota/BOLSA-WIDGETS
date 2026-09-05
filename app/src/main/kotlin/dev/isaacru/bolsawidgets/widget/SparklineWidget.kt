@@ -45,6 +45,7 @@ import dev.isaacru.bolsawidgets.ui.theme.Neutral
 import dev.isaacru.bolsawidgets.widget.render.BitmapBudget
 import dev.isaacru.bolsawidgets.widget.render.SparklineRenderer
 import java.time.Duration
+import kotlinx.coroutines.flow.first
 
 /**
  * One configurable ticker with a sparkline.
@@ -72,6 +73,15 @@ class SparklineWidget : GlanceAppWidget() {
         val entryPoint = WidgetEntryPoint.from(context)
         val quotes = entryPoint.quoteRepository()
         val quote = symbol?.let { quotes.getCachedQuotes(listOf(it))[it.uppercase()] }
+        // The name the user gave it in Seguimiento, if they gave it one. Read from the
+        // same snapshot everything else here comes from, so it costs a query, not a call.
+        val customName = symbol?.let { ticker ->
+            val followed = entryPoint.observeWatchlist().invoke().first()
+            followed.firstOrNull { row -> row.symbol.equals(ticker, ignoreCase = true) }
+                ?.item
+                ?.name
+                ?.takeIf { name -> name.isNotBlank() }
+        }
         // Cache only. A redraw happens for all sorts of reasons the user never asked
         // for -- a launcher restart, a resize, any edit in the app, every worker run --
         // and letting one of those fetch a chart means downloading at three in the
@@ -81,7 +91,13 @@ class SparklineWidget : GlanceAppWidget() {
 
         provideContent {
             GlanceTheme {
-                SparklineContent(symbol = symbol, range = range, quote = quote, series = series)
+                SparklineContent(
+                    symbol = symbol,
+                    title = customName ?: symbol,
+                    range = range,
+                    quote = quote,
+                    series = series,
+                )
             }
         }
     }
@@ -102,6 +118,7 @@ class SparklineWidgetReceiver : GlanceAppWidgetReceiver() {
 @Composable
 private fun SparklineContent(
     symbol: String?,
+    title: String?,
     range: ChartRange,
     quote: Quote?,
     series: CandleSeries?,
@@ -122,7 +139,7 @@ private fun SparklineContent(
             return@Column
         }
 
-        WidgetHeader(title = symbol, trailing = range.label)
+        WidgetHeader(title = title.orEmpty(), trailing = range.label)
 
         val change = quote?.changePercent ?: 0.0
         Text(

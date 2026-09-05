@@ -464,6 +464,22 @@ Lo que spark **no** trae es divisa ni nombre, así que solo sirve para ponerle u
 algo ya identificado. La cotización completa sigue viniendo de `v8/chart`, que es lo que
 mantiene cierto el "nada entra en Room sin cotizar".
 
+**Renombrar un valor**. Menú ⋮ → Renombrar. El campo llega con el nombre que se está
+mostrando ahora, así que el diálogo también sirve para ver qué se está reemplazando, y
+dejarlo vacío es cómo se deshace: la fila vuelve al nombre del mercado, no a nada.
+
+El nombre se ve en la app, en el widget de seguimiento y en el del gráfico. En los tamaños
+cortos del widget, un valor renombrado **lidera con su nombre** y el ticker baja a la
+segunda línea, que es justo lo que se pedía; los demás siguen liderando con el ticker.
+
+El fallo que destapó la primera versión: al añadir un valor se guarda el nombre del
+proveedor, así que "tiene nombre guardado" no es lo mismo que "lo han renombrado". Sin
+comparar contra el `shortName` de la cotización, el widget pasó a enseñar
+"INDUSTRIA DE DISE...O TEXTIL S." en vez de ITX.MC en todas las filas. `hasCustomName` hace
+esa comparación y hay tres tests que la fijan.
+
+Los renombrados viajan en el CSV desde siempre, porque el nombre ya era una columna.
+
 ---
 
 ## Criterios de aceptación v1

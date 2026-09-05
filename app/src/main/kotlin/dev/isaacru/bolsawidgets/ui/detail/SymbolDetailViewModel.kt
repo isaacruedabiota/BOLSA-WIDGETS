@@ -10,6 +10,7 @@ import dev.isaacru.bolsawidgets.domain.model.ChartRange
 import dev.isaacru.bolsawidgets.domain.model.Quote
 import dev.isaacru.bolsawidgets.domain.repository.QuoteRepository
 import dev.isaacru.bolsawidgets.domain.repository.SettingsRepository
+import dev.isaacru.bolsawidgets.domain.repository.WatchlistRepository
 import dev.isaacru.bolsawidgets.ui.navigation.SymbolDetailRoute
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -31,8 +32,11 @@ data class SymbolDetailUiState(
     val isLoadingChart: Boolean = false,
     val chartUnavailable: Boolean = false,
     val privacyMode: Boolean = false,
+    /** The name the user gave this value in Seguimiento, when they gave it one. */
+    val customName: String? = null,
 ) {
-    val displayName: String get() = quote?.shortName ?: symbol
+    val displayName: String
+        get() = customName?.takeIf { it.isNotBlank() } ?: quote?.shortName ?: symbol
 }
 
 /**
@@ -45,6 +49,7 @@ data class SymbolDetailUiState(
 class SymbolDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     settingsRepository: SettingsRepository,
+    watchlistRepository: WatchlistRepository,
     private val quoteRepository: QuoteRepository,
     val zoneId: ZoneId,
 ) : ViewModel() {
@@ -58,8 +63,9 @@ class SymbolDetailViewModel @Inject constructor(
     val uiState: StateFlow<SymbolDetailUiState> = combine(
         quoteRepository.observeQuote(symbol),
         settingsRepository.preferences,
+        watchlistRepository.observeItems(),
         chart,
-    ) { quote, preferences, chartState ->
+    ) { quote, preferences, watchlist, chartState ->
         SymbolDetailUiState(
             symbol = symbol,
             quote = quote,
@@ -69,6 +75,9 @@ class SymbolDetailViewModel @Inject constructor(
             isLoadingChart = chartState.isLoading,
             chartUnavailable = chartState.unavailable,
             privacyMode = preferences.privacyMode,
+            customName = watchlist
+                .firstOrNull { it.symbol.equals(symbol, ignoreCase = true) }
+                ?.name,
         )
     }.stateIn(
         viewModelScope,
