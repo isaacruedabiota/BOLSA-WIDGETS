@@ -36,6 +36,13 @@ sealed interface UiMessage {
 
     data object BackupImportEmpty : UiMessage
 
+    /** A shared list added [added] values; [skipped] were already there or would not price. */
+    data class SharedImported(val added: Int, val skipped: Int) : UiMessage
+
+    data object SharedImportEmpty : UiMessage
+
+    data object ShareListEmpty : UiMessage
+
 
     companion object {
         /** Turns a refresh result into the message that describes it honestly. */
@@ -70,6 +77,14 @@ fun UiMessage.text(): String = when (this) {
     )
     UiMessage.BackupImportFailed -> stringResource(R.string.backup_import_failed)
     UiMessage.BackupImportEmpty -> stringResource(R.string.backup_import_empty)
+    is UiMessage.SharedImported -> if (skipped == 0) {
+        stringResource(R.string.share_import_done, added)
+    } else {
+        stringResource(R.string.share_import_done_partial, added, skipped)
+    }
+
+    UiMessage.SharedImportEmpty -> stringResource(R.string.share_import_empty)
+    UiMessage.ShareListEmpty -> stringResource(R.string.share_list_empty)
 }
 
 /** "1 posición" / "3 posiciones", for sentences that mention both counts. */

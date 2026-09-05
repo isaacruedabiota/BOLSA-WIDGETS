@@ -109,6 +109,20 @@
     <string name="detail_range_low">Mín %1$s</string>
     <string name="detail_range_high">Máx %1$s</string>
 
+    <!-- Compartir la lista con alguien -->
+    <string name="settings_share_header">Compartir lista</string>
+    <string name="settings_share_body">Manda tu lista de seguimiento a quien quieras, o pega la que te hayan mandado. Solo viajan los valores: tus aportaciones no salen del móvil.</string>
+    <string name="share_list">Compartir mi lista</string>
+    <string name="share_import">Pegar una lista</string>
+    <string name="share_import_title">Pegar una lista</string>
+    <string name="share_import_body">Pega el mensaje entero, tal cual te lo hayan mandado. Se añaden a tu lista los valores que reconozca; los que ya tengas se quedan como están.</string>
+    <string name="share_import_label">Lista recibida</string>
+    <string name="share_import_add">Añadir</string>
+    <string name="share_import_done">Añadidos %1$d valores</string>
+    <string name="share_import_done_partial">Añadidos %1$d valores, %2$d omitidos</string>
+    <string name="share_import_empty">No he reconocido ningún valor en ese texto</string>
+    <string name="share_list_empty">Tu lista está vacía, no hay nada que compartir</string>
+
     <!-- Copia de seguridad -->
     <string name="settings_backup_header">Copia de seguridad</string>
     <string name="settings_backup_body">Un único CSV con tu lista de seguimiento y tus aportaciones.</string>
@@ -175,6 +189,10 @@
     <plurals name="count_positions">
         <item quantity="one">%d posición</item>
         <item quantity="other">%d posiciones</item>
+    </plurals>
+    <plurals name="share_import_found">
+        <item quantity="one">%d valor reconocido</item>
+        <item quantity="other">%d valores reconocidos</item>
     </plurals>
     <plurals name="count_watchlist">
         <item quantity="one">%d valor</item>

@@ -480,6 +480,34 @@ esa comparación y hay tres tests que la fijan.
 
 Los renombrados viajan en el CSV desde siempre, porque el nombre ya era una columna.
 
+**Compartir listas**. Ajustes → Compartir lista. "Compartir mi lista" abre el menú de
+compartir de Android con un texto pegable en cualquier chat, y "Pegar una lista" abre un
+cuadro donde cabe el mensaje entero: el parser se queda con las líneas que llevan un ticker
+y tira el resto.
+
+Tres decisiones:
+
+- **Las aportaciones no salen del móvil.** Compartir manda símbolo y nombre; lo que metes
+  cada mes es asunto tuyo y a tu amigo no le sirve de nada. Hay un test que lo comprueba.
+- **Una lista recibida se suma, no reemplaza.** El CSV reemplaza porque es una copia de
+  seguridad; aceptar la lista de alguien no puede borrar la tuya. Los que ya tengas se
+  quedan intactos, con su aportación y su estrella.
+- **Cada símbolo recibido pasa por `resolveSymbol`**, igual que si lo añadieras a mano: la
+  errata de un amigo no puede meter en la base de datos una fila que no cotice. La excepción
+  de "no validar" sigue siendo solo del CSV, que tiene que restaurarse sin red.
+
+El parser se endureció por un test que escribí esperando que pasara y falló: "Hola, mira mi
+lista" se parte por su coma y deja "Hola", que tiene la forma exacta de un ticker. Lo que
+los distingue es cómo se escriben —un ticker va gritado (AAPL, SAN.MC) o lleva su sufijo de
+plaza (ibe.mc)—, así que hace falta una de las dos cosas.
+
+Verificado en el emulador: compartir sacó el texto con los cinco valores y sin una sola
+cifra de aportación; pegar "AAPL / SAN.MC" añadió Apple con su cotización real y omitió
+Santander por estar ya, sin tocarle la aportación ni la estrella.
+
+**Versión 0.2.0** (`versionCode` 2). Se instala encima de la 0.1.0 sin perder nada: misma
+firma, migraciones reales de Room 1→2→3→4 y ningún `fallbackToDestructiveMigration`.
+
 ---
 
 ## Criterios de aceptación v1

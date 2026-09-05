@@ -313,6 +313,11 @@ Yahoo Finance son endpoints públicos no documentados. Se asume que fallan.
   aceptan ambos al leer, porque las hojas de cálculo españolas reescriben con comas.
 - Los saltos de línea se aplanan a espacios al exportar: un registro es una línea, y así
   el parser puede ser línea a línea.
+- **Compartir una lista no es una copia de seguridad.** El CSV lleva todo —aportaciones y
+  favoritos incluidos— y **reemplaza**; una lista compartida (`WatchlistShare`) lleva solo
+  símbolo y nombre y **se suma** a la tuya. Lo que metes cada mes no sale del móvil por ahí,
+  y aceptar la lista de un amigo no puede borrar la tuya. Sus símbolos pasan igualmente por
+  `resolveSymbol`: la excepción de "no validar" es solo del CSV.
 - **Importar reemplaza**, nunca fusiona, y avisa antes con el recuento. Fusionar
   duplicaría cada compra en la segunda importación: una posición escrita a mano no tiene
   identidad natural con la que deduplicar.

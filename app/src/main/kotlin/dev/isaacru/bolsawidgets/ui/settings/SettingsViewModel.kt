@@ -9,6 +9,9 @@ import dev.isaacru.bolsawidgets.domain.model.UserPreferences
 import dev.isaacru.bolsawidgets.domain.provider.ProviderId
 import dev.isaacru.bolsawidgets.domain.repository.BackupRepository
 import dev.isaacru.bolsawidgets.domain.model.ThemeMode
+import dev.isaacru.bolsawidgets.domain.repository.WatchlistRepository
+import dev.isaacru.bolsawidgets.domain.repository.QuoteRepository
+import dev.isaacru.bolsawidgets.domain.share.WatchlistShare
 import dev.isaacru.bolsawidgets.domain.repository.SettingsRepository
 import dev.isaacru.bolsawidgets.ui.common.UiMessage
 import dev.isaacru.bolsawidgets.work.RefreshScheduler
@@ -35,7 +38,14 @@ class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val refreshScheduler: RefreshScheduler,
     private val backupRepository: BackupRepository,
+    private val watchlistRepository: WatchlistRepository,
+    private val quoteRepository: QuoteRepository,
 ) : ViewModel() {
+
+    private val shareText = Channel<String>(Channel.BUFFERED)
+
+    /** Emits the text of the list once it is ready to hand to the share sheet. */
+    val listToShare: Flow<String> = shareText.receiveAsFlow()
 
     private val working = MutableStateFlow(false)
     private val pendingImport = MutableStateFlow<CsvParseResult?>(null)
@@ -50,6 +60,68 @@ class SettingsViewModel @Inject constructor(
     ) { preferences, isWorking, pending ->
         SettingsUiState(preferences = preferences, isWorking = isWorking, pendingImport = pending)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(SUBSCRIPTION_TIMEOUT), SettingsUiState())
+
+    /** Builds the shareable text of the current watchlist. */
+    fun shareList() {
+        viewModelScope.launch {
+            val items = watchlistRepository.getItems()
+            if (items.isEmpty()) {
+                messageChannel.send(UiMessage.ShareListEmpty)
+                return@launch
+            }
+            shareText.send(WatchlistShare.encode(items))
+        }
+    }
+
+    /**
+     * Adds the values of a shared list to the watchlist.
+     *
+     * Added, never replacing: a list from someone else is something you take values from,
+     * and wiping your own to accept it would be a strange way to say thank you. Every
+     * symbol is resolved first, exactly like adding one by hand, so a friend's typo cannot
+     * put a row in the database that will never price.
+     */
+    fun importSharedList(text: String) {
+        viewModelScope.launch {
+            if (working.value) return@launch
+            val shared = WatchlistShare.decode(text)
+            if (shared.isEmpty()) {
+                messageChannel.send(UiMessage.SharedImportEmpty)
+                return@launch
+            }
+
+            working.value = true
+            try {
+                val existing = watchlistRepository.getItems()
+                    .map { it.symbol.uppercase() }
+                    .toMutableSet()
+                var added = 0
+                var skipped = 0
+                shared.forEach { candidate ->
+                    if (!existing.add(candidate.symbol)) {
+                        skipped++
+                        return@forEach
+                    }
+                    val quote = runCatching { quoteRepository.resolveSymbol(candidate.symbol) }
+                        .getOrNull()
+                    if (quote == null) {
+                        skipped++
+                        return@forEach
+                    }
+                    watchlistRepository.add(
+                        symbol = quote.symbol,
+                        // The name travelled with the list, so the friend's own wording is
+                        // kept; falling back to whatever the market calls it.
+                        name = candidate.name.ifBlank { quote.shortName ?: quote.symbol },
+                    )
+                    added++
+                }
+                messageChannel.send(UiMessage.SharedImported(added = added, skipped = skipped))
+            } finally {
+                working.value = false
+            }
+        }
+    }
 
     fun setProvider(providerId: ProviderId) {
         viewModelScope.launch { settingsRepository.setProvider(providerId) }

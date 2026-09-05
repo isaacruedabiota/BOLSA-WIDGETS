@@ -1,5 +1,6 @@
 package dev.isaacru.bolsawidgets.ui.settings
 
+import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -25,11 +26,15 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +49,7 @@ import dev.isaacru.bolsawidgets.R
 import dev.isaacru.bolsawidgets.domain.model.ThemeMode
 import dev.isaacru.bolsawidgets.domain.model.UserPreferences
 import dev.isaacru.bolsawidgets.domain.provider.ProviderId
+import dev.isaacru.bolsawidgets.domain.share.WatchlistShare
 import dev.isaacru.bolsawidgets.ui.common.SnackbarMessages
 import dev.isaacru.bolsawidgets.ui.common.positionsLabel
 import dev.isaacru.bolsawidgets.ui.common.watchlistLabel
@@ -63,6 +69,23 @@ fun SettingsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     SnackbarMessages(viewModel.messages, snackbarHostState)
+
+    var pasting by remember { mutableStateOf(false) }
+
+    // The sharing lives here, not in the ViewModel: handing text to another app is an
+    // Android thing, the same reason the file pickers are on this screen.
+    LaunchedEffect(Unit) {
+        viewModel.listToShare.collect { text ->
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_SUBJECT, WatchlistShare.HEADER)
+                putExtra(Intent.EXTRA_TEXT, text)
+            }
+            context.startActivity(
+                Intent.createChooser(intent, context.getString(R.string.share_list)),
+            )
+        }
+    }
 
     // The document lives outside the app, so the read and the write happen here and the
     // ViewModel only ever sees text. That is what keeps it free of a Context.
@@ -194,6 +217,32 @@ fun SettingsScreen(
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
+            SectionHeader(stringResource(R.string.settings_share_header))
+            Text(
+                text = stringResource(R.string.settings_share_body),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 8.dp),
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Button(
+                    onClick = viewModel::shareList,
+                    enabled = !state.isWorking,
+                    modifier = Modifier.weight(1f),
+                ) { Text(stringResource(R.string.share_list)) }
+                OutlinedButton(
+                    onClick = { pasting = true },
+                    enabled = !state.isWorking,
+                    modifier = Modifier.weight(1f),
+                ) { Text(stringResource(R.string.share_import)) }
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+
             SectionHeader(stringResource(R.string.settings_backup_header))
             Text(
                 text = stringResource(R.string.settings_backup_body),
@@ -237,6 +286,16 @@ fun SettingsScreen(
                 modifier = Modifier.padding(bottom = 24.dp),
             )
         }
+    }
+
+    if (pasting) {
+        PasteListDialog(
+            onDismiss = { pasting = false },
+            onImport = { text ->
+                viewModel.importSharedList(text)
+                pasting = false
+            },
+        )
     }
 
     val staged = state.pendingImport
@@ -326,3 +385,53 @@ private fun ThemeMode.label(): String = stringResource(
         ThemeMode.DARK -> R.string.settings_theme_dark
     },
 )
+
+/**
+ * Taking in a list somebody sent.
+ *
+ * A paste box rather than a file picker, because a shared list arrives in a chat: the
+ * whole message can go in and the parser keeps only the lines that carry a ticker.
+ */
+@Composable
+private fun PasteListDialog(
+    onDismiss: () -> Unit,
+    onImport: (String) -> Unit,
+) {
+    var text by remember { mutableStateOf("") }
+    val found = remember(text) { WatchlistShare.decode(text).size }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.share_import_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = stringResource(R.string.share_import_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    label = { Text(stringResource(R.string.share_import_label)) },
+                    minLines = 4,
+                    maxLines = 8,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(
+                    // Counted as you paste, so nobody presses the button hoping.
+                    text = pluralStringResource(R.plurals.share_import_found, found, found),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onImport(text) }, enabled = found > 0) {
+                Text(stringResource(R.string.share_import_add))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+        },
+    )
+}
