@@ -26,4 +26,14 @@ data class WatchlistRow(
      */
     val hasCustomName: Boolean
         get() = item.name.isNotBlank() && !item.name.equals(quote?.shortName, ignoreCase = true)
+
+    /**
+     * The one line a widget has room for.
+     *
+     * A renamed value prints the name the user gave it, because that is the whole reason
+     * for renaming it; anything else prints the ticker, which is shorter and unambiguous.
+     * The market's own name is never the widget label: it is long, shouted and the same
+     * for every row of a family of ETFs.
+     */
+    val widgetLabel: String get() = if (hasCustomName) displayName else symbol
 }

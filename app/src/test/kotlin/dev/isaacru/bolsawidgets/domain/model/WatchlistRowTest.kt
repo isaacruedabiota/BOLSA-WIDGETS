@@ -75,6 +75,22 @@ class WatchlistRowTest {
     }
 
     @Test
+    fun `a renamed value is printed by its name on the home screen`() {
+        val row = row(name = "Mi ETF global", shortName = "iShares Core MSCI World UCITS ETF")
+
+        assertEquals("Mi ETF global", row.widgetLabel)
+    }
+
+    @Test
+    fun `an untouched value is printed by its ticker, never by the market's name`() {
+        // The market name is long, shouted, and identical across a family of ETFs. On a
+        // tile or a widget row the ticker is the only label that fits and distinguishes.
+        val row = row(name = "iShares Core MSCI World UCITS ETF", shortName = "iShares Core MSCI World UCITS ETF")
+
+        assertEquals("IWDA.AS", row.widgetLabel)
+    }
+
+    @Test
     fun `with no quote to compare against, a stored name stands on its own`() {
         // Airplane mode on a value never fetched: printing the stored name beats printing
         // nothing, and it is the only name there is.

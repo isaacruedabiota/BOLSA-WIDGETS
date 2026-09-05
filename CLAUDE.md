@@ -130,11 +130,14 @@ dev.isaacru.bolsawidgets
   la coma decimal "2.450,00" deja de ser parseable.
 - El **nombre de un valor lo manda el usuario**: `WatchlistRow.displayName` prefiere
   `item.name` y cae al del mercado solo si está vacío, así que renombrar algo se ve a la vez
-  en la app, en el widget de seguimiento y en el del gráfico. Ojo con la diferencia entre
-  "tiene nombre guardado" y "lo han renombrado": al añadir un valor se guarda el nombre del
-  proveedor, así que `hasCustomName` compara con el `shortName` de la cotización. Sin esa
-  comparación, todas las filas del widget pasan a enseñar el nombre largo del mercado en vez
-  del ticker.
+  en la app y en **los tres widgets** —seguimiento, gráfico y mapa de calor—. Ojo con la
+  diferencia entre "tiene nombre guardado" y "lo han renombrado": al añadir un valor se
+  guarda el nombre del proveedor, así que `hasCustomName` compara con el `shortName` de la
+  cotización. Sin esa comparación, todas las filas del widget pasan a enseñar el nombre
+  largo del mercado en vez del ticker.
+- Lo que imprime un widget en su única línea es `WatchlistRow.widgetLabel`: el nombre del
+  usuario si lo hay, y si no el **ticker**, nunca el nombre del mercado. Es la regla la que
+  se comparte entre widgets, no una copia del `if` en cada uno.
 - La **variación del día** se mide siempre contra `previousClose` (cierre de la sesión
   anterior), no contra la apertura.
 - **Unidades menores**: Yahoo cotiza algunos valores de Londres en `GBp` (peniques, con `p`
@@ -219,6 +222,8 @@ Yahoo Finance son endpoints públicos no documentados. Se asume que fallan.
   separadas del dibujo, para que se puedan testear sin Android.
 - Al medir texto para una celda, **encogerlo hasta que quepa**, nunca omitirlo: dos tickers
   de la misma longitud no miden lo mismo y un umbral de todo o nada deja celdas mudas.
+  Por eso `HeatmapEntry` lleva `symbol` y `label` por separado: si el nombre del usuario no
+  entra ni encogido, la celda cae al ticker antes que quedarse muda.
 - El estado por instancia de widget (símbolo y rango del sparkline, origen del mapa de
   calor) vive en `PreferencesGlanceStateDefinition`, y lo escribe la activity de
   configuración, que **lee el estado actual antes de dibujarse**: el lanzador la reabre

@@ -114,7 +114,7 @@ private fun WatchlistRowItem(row: WatchlistRow, zone: ZoneId, compact: Boolean) 
             // point of renaming it; the ticker drops to the second line, which the short
             // sizes do not have room for. Everything else leads with the ticker as before.
             Text(
-                text = if (row.hasCustomName) row.displayName else row.symbol,
+                text = row.widgetLabel,
                 style = TextStyle(
                     color = GlanceTheme.colors.onSurface,
                     fontSize = 14.sp,

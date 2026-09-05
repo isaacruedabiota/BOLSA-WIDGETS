@@ -119,7 +119,12 @@ private fun List<WatchlistRow>.toEntries(
         // unit is already folded in, which is the error that would actually matter: being
         // wrong by 100x reorders the map, being wrong by 10% does not.
         ?: (quote.price * normalized.minorUnitFactor)
-    HeatmapEntry(symbol = row.symbol, weight = priceEur, changePercent = quote.changePercent)
+    HeatmapEntry(
+        symbol = row.symbol,
+        weight = priceEur,
+        changePercent = quote.changePercent,
+        label = row.widgetLabel,
+    )
 }
 
 private fun List<WatchlistRow>.toPlanEntries(): List<HeatmapEntry> = mapNotNull { row ->
@@ -127,7 +132,12 @@ private fun List<WatchlistRow>.toPlanEntries(): List<HeatmapEntry> = mapNotNull 
     // and a monthly 200 have to be comparable before their tiles can be.
     val monthly = row.item.contribution?.monthlyEur ?: return@mapNotNull null
     val quote = row.quote ?: return@mapNotNull null
-    HeatmapEntry(symbol = row.symbol, weight = monthly, changePercent = quote.changePercent)
+    HeatmapEntry(
+        symbol = row.symbol,
+        weight = monthly,
+        changePercent = quote.changePercent,
+        label = row.widgetLabel,
+    )
 }
 
 class HeatmapWidgetReceiver : GlanceAppWidgetReceiver() {

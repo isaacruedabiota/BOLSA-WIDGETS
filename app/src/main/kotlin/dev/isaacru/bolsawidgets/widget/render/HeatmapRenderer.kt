@@ -20,6 +20,12 @@ data class HeatmapEntry(
     /** Share of the portfolio; only the ratios between entries matter. */
     val weight: Double,
     val changePercent: Double,
+    /**
+     * What the tile prints, which is the ticker unless the user renamed the value. Kept
+     * apart from [symbol] so the ticker survives as the fallback for a tile too small to
+     * hold a name.
+     */
+    val label: String = symbol,
 )
 
 /**
@@ -120,19 +126,20 @@ object HeatmapRenderer {
     ) {
         val innerWidth = tile.width * 0.86f
         val innerHeight = tile.height * 0.86f
+        val ideal = minOf(innerHeight * 0.24f, innerWidth * 0.22f)
 
-        // Shrink the ticker to fit rather than dropping it: tickers of the same length
-        // are not the same width ("ITX.MC" is far narrower than "SAN.MC"), and an
-        // all-or-nothing threshold silently leaves some tiles unlabelled.
-        var symbolSize = minOf(innerHeight * 0.24f, innerWidth * 0.22f)
-        symbolPaint.textSize = symbolSize
-        val measured = symbolPaint.measureText(entry.symbol)
-        if (measured > innerWidth) {
-            symbolSize *= innerWidth / measured
-            symbolPaint.textSize = symbolSize
+        // The user's name first, the ticker behind it. A name is longer than a ticker, so
+        // on a small tile it shrinks past reading; falling back then keeps the tile
+        // identified instead of leaving it a mute block of colour.
+        var text = entry.label
+        var symbolSize = fittedSize(symbolPaint, text, ideal, innerWidth)
+        if (symbolSize < MIN_LABEL_TEXT_PX && entry.label != entry.symbol) {
+            text = entry.symbol
+            symbolSize = fittedSize(symbolPaint, text, ideal, innerWidth)
         }
         // Below this the label is unreadable anyway and the tile is left a colour block.
         if (symbolSize < MIN_LABEL_TEXT_PX) return
+        symbolPaint.textSize = symbolSize
 
         val changeText = Format.percent(entry.changePercent)
         changePaint.textSize = symbolSize * 0.76f
@@ -143,11 +150,23 @@ object HeatmapRenderer {
         val centerY = (tile.top + tile.bottom) / 2f
 
         if (showChange) {
-            canvas.drawText(entry.symbol, centerX, centerY - symbolSize * 0.10f, symbolPaint)
+            canvas.drawText(text, centerX, centerY - symbolSize * 0.10f, symbolPaint)
             canvas.drawText(changeText, centerX, centerY + symbolSize * 0.86f, changePaint)
         } else {
-            // Only room for one line: the ticker is the part that identifies the tile.
-            canvas.drawText(entry.symbol, centerX, centerY + symbolSize * 0.35f, symbolPaint)
+            // Only room for one line: the name is the part that identifies the tile.
+            canvas.drawText(text, centerX, centerY + symbolSize * 0.35f, symbolPaint)
         }
+    }
+
+    /**
+     * The largest size no bigger than [ideal] at which [text] fits into [maxWidth].
+     *
+     * Shrinking beats an all-or-nothing threshold because labels of the same length are
+     * not the same width: "ITX.MC" is far narrower than "SAN.MC".
+     */
+    private fun fittedSize(paint: Paint, text: String, ideal: Float, maxWidth: Float): Float {
+        paint.textSize = ideal
+        val measured = paint.measureText(text)
+        return if (measured > maxWidth) ideal * maxWidth / measured else ideal
     }
 }

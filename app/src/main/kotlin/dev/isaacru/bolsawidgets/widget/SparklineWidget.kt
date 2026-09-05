@@ -73,15 +73,15 @@ class SparklineWidget : GlanceAppWidget() {
         val entryPoint = WidgetEntryPoint.from(context)
         val quotes = entryPoint.quoteRepository()
         val quote = symbol?.let { quotes.getCachedQuotes(listOf(it))[it.uppercase()] }
-        // The name the user gave it in Seguimiento, if they gave it one. Read from the
-        // same snapshot everything else here comes from, so it costs a query, not a call.
-        val customName = symbol?.let { ticker ->
+        // The name the user gave it in Seguimiento, and the ticker when they gave it
+        // none: a stored name is the provider's until it is changed, and printing that
+        // one here fills the header with "BANCO SANTANDE...". Read from the same snapshot
+        // everything else here comes from, so it costs a query, not a call.
+        val title = symbol?.let { ticker ->
             val followed = entryPoint.observeWatchlist().invoke().first()
             followed.firstOrNull { row -> row.symbol.equals(ticker, ignoreCase = true) }
-                ?.item
-                ?.name
-                ?.takeIf { name -> name.isNotBlank() }
-        }
+                ?.widgetLabel
+        } ?: symbol
         // Cache only. A redraw happens for all sorts of reasons the user never asked
         // for -- a launcher restart, a resize, any edit in the app, every worker run --
         // and letting one of those fetch a chart means downloading at three in the
@@ -93,7 +93,7 @@ class SparklineWidget : GlanceAppWidget() {
             GlanceTheme {
                 SparklineContent(
                     symbol = symbol,
-                    title = customName ?: symbol,
+                    title = title,
                     range = range,
                     quote = quote,
                     series = series,
